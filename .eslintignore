@@ -1,0 +1,16 @@
+# Fichiers générés par Prisma
+lib/generated/
+prisma/generated/
+
+# Fichiers de build
+.next/
+out/
+dist/
+
+# Fichiers de cache
+node_modules/
+*.log
+
+# Fichiers temporaires
+*.tmp
+*.temp
