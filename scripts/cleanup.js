@@ -85,3 +85,4 @@ console.log(`\n✅ Nettoyage terminé ! ${cleanedCount} éléments supprimés.`)
 console.log('\n💡 Pour un nettoyage complet, exécutez aussi :');
 console.log('   npm run build  # Pour vérifier que tout fonctionne');
 console.log('   npm install   # Pour réinstaller les dépendances si nécessaire');
+

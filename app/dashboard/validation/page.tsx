@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -30,11 +30,10 @@ export default function ValidationPage() {
     };
   } | null>(null);
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!code.trim()) {
-      toast.error("Veuillez entrer un code");
+  // Fonction de recherche avec debounce
+  const searchGiftCard = useCallback(async (searchCode: string) => {
+    if (!searchCode.trim() || searchCode.length < 3) {
+      setGiftCardData(null);
       return;
     }
 
@@ -43,20 +42,53 @@ export default function ValidationPage() {
 
     try {
       const response = await fetch(
-        `/api/gift-cards/validate?code=${encodeURIComponent(code.trim())}`
+        `/api/gift-cards/validate?code=${encodeURIComponent(searchCode.trim())}`
       );
       const data = await response.json();
 
       if (response.ok) {
         setGiftCardData(data);
       } else {
-        toast.error(data.error || "Bon cadeau non trouvé");
+        const errorData = data as { error?: string; details?: string };
+        // Afficher une erreur seulement si c'est une erreur serveur (500) ou si le code est complet
+        if (response.status === 500) {
+          toast.error(errorData.error || "Erreur lors de la recherche");
+          console.error("Erreur API:", errorData.details || errorData.error);
+        } else if (response.status === 404 && searchCode.trim().length >= 8) {
+          // Afficher l'erreur seulement si le code semble complet (au moins 8 caractères)
+          toast.error("Bon cadeau non trouvé");
+        }
+        // Ne pas afficher d'erreur pour les codes non trouvés lors de la recherche dynamique
+        // L'utilisateur tape encore, on attend qu'il termine
+        setGiftCardData(null);
       }
     } catch (error) {
-      toast.error("Erreur lors de la recherche");
+      console.error("Erreur lors de la recherche:", error);
+      setGiftCardData(null);
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  // Debounce effect
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      searchGiftCard(code);
+    }, 500); // Attendre 500ms après que l'utilisateur arrête de taper
+
+    return () => clearTimeout(timeoutId);
+  }, [code, searchGiftCard]);
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!code.trim()) {
+      toast.error("Veuillez entrer un code");
+      return;
+    }
+
+    // Déclencher la recherche immédiatement
+    await searchGiftCard(code);
   };
 
   const handleValidationSuccess = () => {
@@ -84,33 +116,39 @@ export default function ValidationPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Rechercher un bon cadeau</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            Rechercher un bon cadeau
+            {loading && (
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            )}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSearch} className="flex gap-4">
-            <div className="flex-1">
+            <div className="flex-1 relative">
               <Input
                 placeholder="Entrez le code du bon (ex: INF-XXXX-XXXX)"
                 value={code}
                 onChange={(e) => setCode(e.target.value.toUpperCase())}
-                className="font-mono"
+                className="font-mono pr-10"
                 disabled={loading}
               />
-            </div>
-            <Button type="submit" disabled={loading}>
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Recherche...
-                </>
-              ) : (
-                <>
-                  <Search className="mr-2 h-4 w-4" />
-                  Rechercher
-                </>
+              {loading && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                </div>
               )}
+            </div>
+            <Button type="submit" disabled={loading || !code.trim()}>
+              <Search className="mr-2 h-4 w-4" />
+              Rechercher
             </Button>
           </form>
+          {code.length > 0 && code.length < 3 && (
+            <p className="text-sm text-muted-foreground mt-2">
+              Tapez au moins 3 caractères pour rechercher automatiquement
+            </p>
+          )}
         </CardContent>
       </Card>
 

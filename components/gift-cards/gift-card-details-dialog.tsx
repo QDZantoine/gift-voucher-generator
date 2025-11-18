@@ -62,8 +62,13 @@ export function GiftCardDetailsDialog({
                 <div>
                   <p className="text-sm font-medium">Type de menu</p>
                   <p className="text-sm text-muted-foreground">
-                    {giftCard.productType}
+                    {giftCard.menuType?.name || giftCard.productType}
                   </p>
+                  {giftCard.menuType?.description && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {giftCard.menuType.description}
+                    </p>
+                  )}
                 </div>
               </div>
 

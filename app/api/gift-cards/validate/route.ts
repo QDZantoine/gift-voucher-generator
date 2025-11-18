@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prismaBase } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { isDateInExclusionPeriod } from "@/lib/types/exclusion-period";
@@ -23,13 +23,22 @@ export async function GET(request: NextRequest) {
     }
 
     // Rechercher le bon cadeau
-    const giftCard = await prisma.giftCard.findUnique({
+    // Utiliser prismaBase pour les requêtes avec includes (Accelerate peut avoir des problèmes)
+    const giftCard = await prismaBase.giftCard.findUnique({
       where: { code: code.toUpperCase() },
       include: {
         user: {
           select: {
             name: true,
             email: true,
+          },
+        },
+        menuType: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            amount: true,
           },
         },
       },
@@ -43,7 +52,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Récupérer toutes les périodes d'exclusion
-    const exclusionPeriods = await prisma.exclusionPeriod.findMany();
+    const exclusionPeriods = await prismaBase.exclusionPeriod.findMany();
 
     // Vérifier la validité
     const now = new Date();
@@ -100,13 +109,32 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Retourner l'objet giftCard avec la validation intégrée
     return NextResponse.json({
-      giftCard,
+      id: giftCard.id,
+      code: giftCard.code,
+      productType: giftCard.menuType?.name || giftCard.productType,
+      menuType: giftCard.menuType,
+      numberOfPeople: giftCard.numberOfPeople,
+      recipientName: giftCard.recipientName,
+      recipientEmail: giftCard.recipientEmail,
+      amount: giftCard.amount,
+      expiryDate: giftCard.expiryDate.toISOString(),
+      isUsed: giftCard.isUsed,
+      isExpired: expiryDate < now,
       validation,
     });
   } catch (error) {
     console.error("Erreur lors de la vérification du bon:", error);
-    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : "Erreur inconnue";
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error("Détails de l'erreur:", { errorMessage, errorStack });
+    return NextResponse.json(
+      { 
+        error: "Erreur serveur",
+        details: process.env.NODE_ENV === "development" ? errorMessage : undefined
+      },
+      { status: 500 }
+    );
   }
 }
-

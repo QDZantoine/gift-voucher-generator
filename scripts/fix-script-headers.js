@@ -60,3 +60,4 @@ function fixScriptHeader(filePath) {
 scriptFiles.forEach(fixScriptHeader);
 
 console.log('\n🎉 Correction des en-têtes terminée !');
+

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -25,15 +26,10 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Gift, Loader2, CreditCard } from "lucide-react";
 import { toast } from "sonner";
-import { MENU_PRICES, MenuType } from "@/lib/stripe";
+import { MenuType } from "@/lib/types/menu-type";
 
 const orderSchema = z.object({
-  menuType: z.enum([
-    "Menu Influences",
-    "Menu Dégustation",
-    "Menu Prestige",
-    "Menu Découverte",
-  ]),
+  menuType: z.string().min(1, "Le type de menu est requis"),
   numberOfPeople: z.coerce
     .number()
     .min(1, "Minimum 1 personne")
@@ -42,28 +38,59 @@ const orderSchema = z.object({
   recipientEmail: z.string().email("Email invalide"),
   purchaserName: z.string().min(2, "Nom requis"),
   purchaserEmail: z.string().email("Email invalide"),
+  customMessage: z.string().optional(),
 });
 
 type OrderFormValues = z.infer<typeof orderSchema>;
 
 export default function HomePage() {
   const [loading, setLoading] = useState(false);
+  const [menuTypes, setMenuTypes] = useState<MenuType[]>([]);
+  const [loadingMenuTypes, setLoadingMenuTypes] = useState(true);
 
   const form = useForm<OrderFormValues>({
     resolver: zodResolver(orderSchema),
     defaultValues: {
       numberOfPeople: 2,
-      menuType: "Menu Influences",
+      menuType: "",
       recipientName: "",
       recipientEmail: "",
       purchaserName: "",
       purchaserEmail: "",
+      customMessage: "",
     },
   });
 
-  const menuType = form.watch("menuType") as MenuType;
+  // Charger les types de menus actifs
+  useEffect(() => {
+    const fetchMenuTypes = async () => {
+      try {
+        const response = await fetch("/api/menu-types/active");
+        if (response.ok) {
+          const data = await response.json();
+          setMenuTypes(data);
+          // Définir le premier menu comme valeur par défaut
+          if (data.length > 0) {
+            form.setValue("menuType", data[0].name);
+          }
+        }
+      } catch (error) {
+        console.error("Erreur lors du chargement des menus:", error);
+        toast.error("Erreur lors du chargement des types de menus");
+      } finally {
+        setLoadingMenuTypes(false);
+      }
+    };
+
+    fetchMenuTypes();
+  }, [form]);
+
+  const menuTypeName = form.watch("menuType");
   const numberOfPeople = form.watch("numberOfPeople");
-  const totalAmount = MENU_PRICES[menuType] * numberOfPeople;
+  const selectedMenuType = menuTypes.find((m) => m.name === menuTypeName);
+  const totalAmount = selectedMenuType
+    ? selectedMenuType.amount * numberOfPeople
+    : 0;
 
   const onSubmit = async (data: OrderFormValues) => {
     setLoading(true);
@@ -100,10 +127,13 @@ export default function HomePage() {
 
       <div className="relative z-10 w-full max-w-4xl">
         <div className="text-center mb-8 sm:mb-12">
-          <Gift className="h-16 w-16 sm:h-20 sm:w-20 mx-auto text-[#1A2B4B] mb-4 sm:mb-6" />
-          <h1 className="font-playfair-display text-3xl sm:text-4xl lg:text-5xl font-bold text-[#1A2B4B] mb-3 sm:mb-4">
+          {/* <Gift className="h-16 w-16 sm:h-20 sm:w-20 mx-auto text-[#1A2B4B] mb-4 sm:mb-6" /> */}
+          {/* <h1 className="font-playfair-display text-3xl sm:text-4xl lg:text-5xl font-bold text-[#1A2B4B] mb-3 sm:mb-4">
             Offrez Influences
-          </h1>
+          </h1> */}
+          <div className="flex justify-center items-center mb-8">
+          <Image src="/images/logo-bleu.svg" alt="Influences Logo" width={600} height={600} />
+          </div>
           <p className="font-lato text-lg sm:text-xl text-[#1A2B4B]/80 max-w-2xl mx-auto px-4 sm:px-0">
             Offrez un moment de partage à vos proches ! En quelques clics,
             recevez directement par mail, nos bons cadeaux.
@@ -133,20 +163,39 @@ export default function HomePage() {
                         </FormLabel>
                         <Select
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
+                          value={field.value}
+                          disabled={loadingMenuTypes || menuTypes.length === 0}
                         >
                           <FormControl>
                             <SelectTrigger className="font-lato border-[#1A2B4B]/20 focus:border-[#1A2B4B] focus:ring-2 focus:ring-[#1A2B4B]/20 transition-colors">
-                              <SelectValue placeholder="Sélectionnez un menu" />
+                              <SelectValue
+                                placeholder={
+                                  loadingMenuTypes
+                                    ? "Chargement..."
+                                    : "Sélectionnez un menu"
+                                }
+                              />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent className="font-lato">
-                            {Object.entries(MENU_PRICES).map(
-                              ([menu, price]) => (
-                                <SelectItem key={menu} value={menu}>
-                                  {menu} - {price}€ / pers.
+                            {loadingMenuTypes ? (
+                              <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                                Chargement...
+                              </div>
+                            ) : menuTypes.length === 0 ? (
+                              <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                                Aucun menu disponible
+                              </div>
+                            ) : (
+                              menuTypes.map((menuType) => (
+                                <SelectItem
+                                  key={menuType.id}
+                                  value={menuType.name}
+                                >
+                                  {menuType.name} - {menuType.amount.toFixed(2)}
+                                  € / pers.
                                 </SelectItem>
-                              )
+                              ))
                             )}
                           </SelectContent>
                         </Select>
@@ -236,6 +285,30 @@ export default function HomePage() {
                       </FormControl>
                       <FormDescription className="font-lato text-[#1A2B4B]/70">
                         Le bon cadeau sera envoyé à cette adresse
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="customMessage"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="font-lato font-medium text-[#1A2B4B]">
+                        Message personnalisé
+                      </FormLabel>
+                      <FormControl>
+                        <textarea
+                          placeholder="Écrivez un message personnalisé qui apparaîtra sur le bon cadeau..."
+                          {...field}
+                          rows={4}
+                          className="font-lato w-full px-3 py-2 border border-[#1A2B4B]/20 rounded-md focus:border-[#1A2B4B] focus:ring-2 focus:ring-[#1A2B4B]/20 focus:outline-none transition-colors resize-none"
+                        />
+                      </FormControl>
+                      <FormDescription className="font-lato text-[#1A2B4B]/70">
+                        Ce message apparaîtra sur le bon cadeau PDF
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

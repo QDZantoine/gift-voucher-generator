@@ -179,7 +179,7 @@ export function GiftCardValidationCard({
                 <div>
                   <p className="text-sm font-medium">Montant</p>
                   <p className="text-sm text-muted-foreground">
-                    {giftCard.amount.toFixed(2)} €
+                    {giftCard.amount ? giftCard.amount.toFixed(2) : "0.00"} €
                   </p>
                 </div>
               </div>
@@ -254,7 +254,8 @@ export function GiftCardValidationCard({
               <br />
               <strong>Code :</strong> {giftCard.code}
               <br />
-              <strong>Montant :</strong> {giftCard.amount.toFixed(2)} €
+              <strong>Montant :</strong>{" "}
+              {giftCard.amount ? giftCard.amount.toFixed(2) : "0.00"} €
               <br />
               <strong>Destinataire :</strong> {giftCard.recipientName}
               <br />

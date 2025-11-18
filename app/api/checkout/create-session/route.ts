@@ -1,19 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { stripe, calculateGiftCardAmount, MenuType } from "@/lib/stripe";
+import { stripe } from "@/lib/stripe";
+import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 
 const orderSchema = z.object({
-  menuType: z.enum([
-    "Menu Influences",
-    "Menu Dégustation",
-    "Menu Prestige",
-    "Menu Découverte",
-  ]),
+  menuType: z.string().min(1, "Le type de menu est requis"),
   numberOfPeople: z.number().min(1).max(20),
   recipientName: z.string().min(2),
   recipientEmail: z.string().email(),
   purchaserName: z.string().min(2),
   purchaserEmail: z.string().email(),
+  customMessage: z.string().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -30,13 +27,30 @@ export async function POST(request: NextRequest) {
       recipientEmail,
       purchaserName,
       purchaserEmail,
+      customMessage,
     } = validatedData;
 
+    // Vérifier que le type de menu existe et est actif
+    const menuTypeData = await prisma.menuType.findUnique({
+      where: { name: menuType },
+    });
+
+    if (!menuTypeData) {
+      return NextResponse.json(
+        { error: "Type de menu non trouvé" },
+        { status: 400 }
+      );
+    }
+
+    if (!menuTypeData.isActive) {
+      return NextResponse.json(
+        { error: "Ce type de menu n'est plus actif" },
+        { status: 400 }
+      );
+    }
+
     // Calculer le montant total
-    const amount = calculateGiftCardAmount(
-      menuType as MenuType,
-      numberOfPeople
-    );
+    const amount = menuTypeData.amount * numberOfPeople;
 
     // Créer une session Stripe Checkout
     const session = await stripe.checkout.sessions.create({
@@ -71,6 +85,7 @@ export async function POST(request: NextRequest) {
         purchaserName,
         purchaserEmail,
         amount: amount.toString(),
+        customMessage: customMessage || "",
       },
     });
 

@@ -644,7 +644,19 @@ export const DEFAULT_TEMPLATES: Omit<
 // Fonction pour remplacer les variables dans le template
 export function replaceTemplateVariables(
   template: string,
-  data: GiftCardTemplateData
+  data: GiftCardTemplateData,
+  customTexts?: {
+    restaurantName?: string;
+    restaurantSubtitle?: string;
+    giftCardTitle?: string;
+    welcomeMessage?: string;
+    validityMessage?: string;
+    footerTitle?: string;
+    contactInfo?: string;
+    openingHours?: string;
+    giftIcon?: string;
+    restaurantLogoUrl?: string;
+  }
 ): string {
   let result = template;
 
@@ -665,6 +677,56 @@ export function replaceTemplateVariables(
     /\{\{purchaseDate\}\}/g,
     new Date(data.purchaseDate).toLocaleDateString("fr-FR")
   );
+
+  // Variables de texte personnalisées
+  if (customTexts) {
+    result = result.replace(
+      /\{\{restaurantName\}\}/g,
+      customTexts.restaurantName || "Restaurant"
+    );
+    result = result.replace(
+      /\{\{restaurantSubtitle\}\}/g,
+      customTexts.restaurantSubtitle || "Cuisine"
+    );
+    result = result.replace(
+      /\{\{giftCardTitle\}\}/g,
+      customTexts.giftCardTitle || "Bon Cadeau"
+    );
+    result = result.replace(/\{\{giftIcon\}\}/g, customTexts.giftIcon || "🎁");
+    result = result.replace(
+      /\{\{footerTitle\}\}/g,
+      customTexts.footerTitle || "Restaurant"
+    );
+    result = result.replace(
+      /\{\{contactInfo\}\}/g,
+      customTexts.contactInfo || ""
+    );
+    result = result.replace(
+      /\{\{openingHours\}\}/g,
+      customTexts.openingHours || ""
+    );
+    result = result.replace(
+      /\{\{restaurantLogoUrl\}\}/g,
+      customTexts.restaurantLogoUrl || ""
+    );
+
+    // Messages avec remplacement des variables
+    if (customTexts.welcomeMessage) {
+      let welcomeMsg = customTexts.welcomeMessage;
+      welcomeMsg = welcomeMsg.replace(
+        /\{\{recipientName\}\}/g,
+        data.recipientName
+      );
+      result = result.replace(/\{\{welcomeMessage\}\}/g, welcomeMsg);
+    }
+
+    if (customTexts.validityMessage) {
+      result = result.replace(
+        /\{\{validityMessage\}\}/g,
+        customTexts.validityMessage
+      );
+    }
+  }
 
   // Variables optionnelles
   if (data.customMessage) {

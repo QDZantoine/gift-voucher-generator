@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { prisma, prismaBase } from "@/lib/prisma";
 import { createGiftCardSchema } from "@/lib/validations/gift-card";
 import { generateUniqueCode } from "@/lib/utils/code-generator";
 import { headers } from "next/headers";
@@ -50,18 +50,20 @@ export async function GET(request: NextRequest) {
       where.expiryDate = { gte: new Date() };
     }
 
-    // Recherche par code ou email
+    // Recherche par code ou email (compatible SQLite)
     if (search) {
+      const searchLower = search.toLowerCase();
       where.OR = [
-        { code: { contains: search, mode: "insensitive" } },
-        { recipientEmail: { contains: search, mode: "insensitive" } },
-        { purchaserEmail: { contains: search, mode: "insensitive" } },
+        { code: { contains: searchLower, mode: "insensitive" } },
+        { recipientEmail: { contains: searchLower, mode: "insensitive" } },
+        { purchaserEmail: { contains: searchLower, mode: "insensitive" } },
       ];
     }
 
     // Récupérer les bons avec pagination
+    // Utiliser prismaBase pour les requêtes avec includes (Accelerate peut avoir des problèmes)
     const [giftCards, total] = await Promise.all([
-      prisma.giftCard.findMany({
+      prismaBase.giftCard.findMany({
         where,
         include: {
           user: {
@@ -71,12 +73,20 @@ export async function GET(request: NextRequest) {
               email: true,
             },
           },
+          menuType: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+              amount: true,
+            },
+          },
         },
         orderBy: { createdAt: "desc" },
         skip,
         take: limit,
       }),
-      prisma.giftCard.count({ where }),
+      prismaBase.giftCard.count({ where }),
     ]);
 
     return NextResponse.json({
@@ -90,8 +100,14 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error fetching gift cards:", error);
+    const errorMessage = error instanceof Error ? error.message : "Erreur inconnue";
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error("Détails de l'erreur:", { errorMessage, errorStack });
     return NextResponse.json(
-      { error: "Erreur lors de la récupération des bons cadeaux" },
+      { 
+        error: "Erreur lors de la récupération des bons cadeaux",
+        details: process.env.NODE_ENV === "development" ? errorMessage : undefined
+      },
       { status: 500 }
     );
   }
@@ -113,19 +129,40 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = createGiftCardSchema.parse(body);
 
+    // Utiliser prismaBase pour les requêtes avec includes (Accelerate peut avoir des problèmes)
+    // Vérifier que le type de menu existe et est actif
+    const menuType = await prismaBase.menuType.findUnique({
+      where: { name: validatedData.productType },
+    });
+
+    if (!menuType) {
+      return NextResponse.json(
+        { error: "Type de menu non trouvé" },
+        { status: 400 }
+      );
+    }
+
+    if (!menuType.isActive) {
+      return NextResponse.json(
+        { error: "Ce type de menu n'est plus actif" },
+        { status: 400 }
+      );
+    }
+
     // Générer un code unique
     const code = await generateUniqueCode(async (code) => {
-      const existing = await prisma.giftCard.findUnique({
+      const existing = await prismaBase.giftCard.findUnique({
         where: { code },
       });
       return !!existing;
     });
 
-    // Créer le bon cadeau
-    const giftCard = await prisma.giftCard.create({
+    // Créer le bon cadeau avec la relation MenuType
+    const giftCard = await prismaBase.giftCard.create({
       data: {
         code,
-        productType: validatedData.productType,
+        productType: validatedData.productType, // Gardé pour rétrocompatibilité
+        menuTypeId: menuType.id, // Nouvelle relation
         numberOfPeople: validatedData.numberOfPeople,
         recipientName: validatedData.recipientName,
         recipientEmail: validatedData.recipientEmail,
@@ -135,6 +172,7 @@ export async function POST(request: NextRequest) {
         expiryDate: validatedData.expiryDate,
         createdOnline: validatedData.createdOnline,
         createdBy: validatedData.createdOnline ? null : session.user.id,
+        customMessage: validatedData.customMessage,
       },
       include: {
         user: {

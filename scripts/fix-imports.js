@@ -62,3 +62,4 @@ function fixImports(filePath) {
 filesToFix.forEach(fixImports);
 
 console.log('\n🎉 Correction des imports terminée !');
+

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -132,27 +133,33 @@ export default function DashboardPage() {
           <CardDescription>Gérez vos bons cadeaux facilement</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="rounded-lg border p-4">
-            <h3 className="font-semibold mb-2">🎁 Créer un bon cadeau</h3>
-            <p className="text-sm text-muted-foreground">
-              Allez dans &quot;Bons cadeaux&quot; pour créer un nouveau bon
-              directement depuis le restaurant.
-            </p>
-          </div>
-          <div className="rounded-lg border p-4">
-            <h3 className="font-semibold mb-2">✅ Valider un bon</h3>
-            <p className="text-sm text-muted-foreground">
-              Utilisez la section &quot;Validation&quot; pour scanner ou
-              rechercher un bon à valider.
-            </p>
-          </div>
-          <div className="rounded-lg border p-4">
-            <h3 className="font-semibold mb-2">📅 Gérer les exclusions</h3>
-            <p className="text-sm text-muted-foreground">
-              Configurez les périodes spéciales (Noël, Feria, etc.) dans
-              &quot;Périodes d&apos;exclusion&quot;.
-            </p>
-          </div>
+          <Link href="/dashboard/gift-cards/create">
+            <div className="rounded-lg border p-4 hover:bg-accent hover:border-accent-foreground/20 transition-colors cursor-pointer">
+              <h3 className="font-semibold mb-2">🎁 Créer un bon cadeau</h3>
+              <p className="text-sm text-muted-foreground">
+                Allez dans &quot;Bons cadeaux&quot; pour créer un nouveau bon
+                directement depuis le restaurant.
+              </p>
+            </div>
+          </Link>
+          <Link href="/dashboard/validation">
+            <div className="rounded-lg border p-4 hover:bg-accent hover:border-accent-foreground/20 transition-colors cursor-pointer">
+              <h3 className="font-semibold mb-2">✅ Valider un bon</h3>
+              <p className="text-sm text-muted-foreground">
+                Utilisez la section &quot;Validation&quot; pour scanner ou
+                rechercher un bon à valider.
+              </p>
+            </div>
+          </Link>
+          <Link href="/dashboard/exclusion-periods">
+            <div className="rounded-lg border p-4 hover:bg-accent hover:border-accent-foreground/20 transition-colors cursor-pointer">
+              <h3 className="font-semibold mb-2">📅 Gérer les exclusions</h3>
+              <p className="text-sm text-muted-foreground">
+                Configurez les périodes spéciales (Noël, Feria, etc.) dans
+                &quot;Périodes d&apos;exclusion&quot;.
+              </p>
+            </div>
+          </Link>
         </CardContent>
       </Card>
     </div>

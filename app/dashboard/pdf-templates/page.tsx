@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Edit, Eye, Trash2, Save, X, Play } from "lucide-react";
+import { Plus, Edit, Eye, Trash2, Save, X, Play, Palette } from "lucide-react";
 import { toast } from "sonner";
 import {
   PDFTemplate,
@@ -30,6 +30,8 @@ import {
   replaceTemplateVariables,
   GiftCardTemplateData,
 } from "@/lib/pdf-templates";
+import { VisualTemplateEditor } from "@/components/pdf-template/VisualTemplateEditor";
+import { MenuType } from "@/lib/types/menu-type";
 
 export default function PDFTemplatesPage() {
   const [templates, setTemplates] = useState<PDFTemplate[]>([]);
@@ -37,16 +39,57 @@ export default function PDFTemplatesPage() {
     null
   );
   const [isEditing, setIsEditing] = useState(false);
+  const [isVisualEditing, setIsVisualEditing] = useState(false);
+  const [menuTypes, setMenuTypes] = useState<MenuType[]>([]);
+  const [loadingMenuTypes, setLoadingMenuTypes] = useState(true);
   const [previewData, setPreviewData] = useState<GiftCardTemplateData>({
     code: "INF-XXXX-XXXX",
-    productType: "Menu Influences",
+    productType: "",
     numberOfPeople: 2,
     recipientName: "Jean Dupont",
-    amount: 90,
+    amount: 0,
     expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
     purchaseDate: new Date().toISOString(),
     customMessage: "Joyeux anniversaire !",
   });
+
+  // Charger les types de menus actifs
+  useEffect(() => {
+    const fetchMenuTypes = async () => {
+      try {
+        const response = await fetch("/api/menu-types/active");
+        if (response.ok) {
+          const data = await response.json();
+          setMenuTypes(data);
+          // Définir le premier menu comme valeur par défaut
+          if (data.length > 0) {
+            const firstMenu = data[0];
+            setPreviewData((prev) => ({
+              ...prev,
+              productType: firstMenu.name,
+              amount: firstMenu.amount * 2, // 2 personnes par défaut
+            }));
+          }
+        }
+      } catch (error) {
+        console.error("Erreur lors du chargement des menus:", error);
+        toast.error("Erreur lors du chargement des types de menus");
+      } finally {
+        setLoadingMenuTypes(false);
+      }
+    };
+
+    fetchMenuTypes();
+  }, []);
+
+  // Mettre à jour le montant automatiquement quand le type de menu ou le nombre de personnes change
+  useEffect(() => {
+    const menuType = menuTypes.find((m) => m.name === previewData.productType);
+    if (menuType && previewData.numberOfPeople > 0) {
+      const calculatedAmount = menuType.amount * previewData.numberOfPeople;
+      setPreviewData((prev) => ({ ...prev, amount: calculatedAmount }));
+    }
+  }, [previewData.productType, previewData.numberOfPeople, menuTypes]);
 
   useEffect(() => {
     // Charger les templates (pour l'instant, utiliser les templates par défaut)
@@ -62,6 +105,11 @@ export default function PDFTemplatesPage() {
   const handleEditTemplate = (template: PDFTemplate) => {
     setSelectedTemplate(template);
     setIsEditing(true);
+  };
+
+  const handleVisualEditTemplate = (template: PDFTemplate) => {
+    setSelectedTemplate(template);
+    setIsVisualEditing(true);
   };
 
   const handleSaveTemplate = () => {
@@ -196,7 +244,17 @@ export default function PDFTemplatesPage() {
                       <Button
                         variant="outline"
                         size="sm"
+                        onClick={() => handleVisualEditTemplate(template)}
+                        title="Éditeur Visuel"
+                        className="bg-blue-50 hover:bg-blue-100 border-blue-200"
+                      >
+                        <Palette className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => handleEditTemplate(template)}
+                        title="Éditeur HTML"
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
@@ -278,17 +336,17 @@ export default function PDFTemplatesPage() {
                         productType: value,
                       }))
                     }
+                    disabled={loadingMenuTypes}
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder={loadingMenuTypes ? "Chargement..." : "Sélectionnez un menu"} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Menu Influences">
-                        Menu Influences
-                      </SelectItem>
-                      <SelectItem value="Menu Dégustation">
-                        Menu Dégustation
-                      </SelectItem>
+                      {menuTypes.map((menuType) => (
+                        <SelectItem key={menuType.id} value={menuType.name}>
+                          {menuType.name} - {menuType.amount.toFixed(2)}€/pers.
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -311,14 +369,13 @@ export default function PDFTemplatesPage() {
                   <Input
                     id="amount"
                     type="number"
-                    value={previewData.amount}
-                    onChange={(e) =>
-                      setPreviewData((prev) => ({
-                        ...prev,
-                        amount: parseFloat(e.target.value),
-                      }))
-                    }
+                    value={previewData.amount || 0}
+                    readOnly
+                    className="bg-muted"
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Calculé automatiquement (prix par personne × nombre de personnes)
+                  </p>
                 </div>
                 <div>
                   <Label htmlFor="customMessage">Message personnalisé</Label>
@@ -373,15 +430,26 @@ export default function PDFTemplatesPage() {
                   </div>
                   <div>
                     <Label htmlFor="productType">Type de menu</Label>
-                    <Input
-                      id="productType"
-                      value={selectedTemplate.productType}
-                      onChange={(e) =>
+                    <Select
+                      value={selectedTemplate?.productType || ""}
+                      onValueChange={(value) =>
                         setSelectedTemplate((prev) =>
-                          prev ? { ...prev, productType: e.target.value } : null
+                          prev ? { ...prev, productType: value } : null
                         )
                       }
-                    />
+                      disabled={loadingMenuTypes}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={loadingMenuTypes ? "Chargement..." : "Sélectionnez un menu"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {menuTypes.map((menuType) => (
+                          <SelectItem key={menuType.id} value={menuType.name}>
+                            {menuType.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 <div>
@@ -440,6 +508,26 @@ export default function PDFTemplatesPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Éditeur Visuel */}
+      {selectedTemplate && isVisualEditing && (
+        <VisualTemplateEditor
+          template={selectedTemplate}
+          onSave={(updatedTemplate) => {
+            setTemplates((prev) =>
+              prev.map((t) =>
+                t.id === updatedTemplate.id
+                  ? { ...updatedTemplate, updatedAt: new Date() }
+                  : t
+              )
+            );
+            setIsVisualEditing(false);
+            toast.success("Template sauvegardé avec succès");
+          }}
+          onCancel={() => setIsVisualEditing(false)}
+          previewData={previewData}
+        />
       )}
     </div>
   );

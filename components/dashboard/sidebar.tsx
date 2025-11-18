@@ -10,6 +10,7 @@ import {
   Receipt,
   FileText,
   Palette,
+  Utensils,
 } from "lucide-react";
 import {
   Sidebar,
@@ -43,6 +44,11 @@ const menuItems = [
     title: "Périodes d'exclusion",
     href: "/dashboard/exclusion-periods",
     icon: CalendarX,
+  },
+  {
+    title: "Types de menus",
+    href: "/dashboard/menu-types",
+    icon: Utensils,
   },
   {
     title: "Prévisualisation PDF",

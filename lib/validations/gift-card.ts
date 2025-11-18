@@ -1,15 +1,11 @@
 import { z } from "zod";
-import { PRODUCT_TYPES } from "../types/gift-card";
 
 // Schéma de validation pour la création d'un bon cadeau
 export const createGiftCardSchema = z.object({
-  productType: z.enum(
-    PRODUCT_TYPES.map((p) => p.value) as [string, ...string[]],
-    {
-      required_error: "Le type de produit est requis",
-      invalid_type_error: "Type de produit invalide",
-    }
-  ),
+  productType: z.string({
+    required_error: "Le type de produit est requis",
+    invalid_type_error: "Type de produit invalide",
+  }).min(1, "Le type de produit est requis"),
   numberOfPeople: z
     .number({
       required_error: "Le nombre de personnes est requis",
@@ -51,7 +47,7 @@ export const createGiftCardSchema = z.object({
     invalid_type_error: "Date invalide",
   }),
   createdOnline: z.boolean().default(false),
+  customMessage: z.string().optional(),
 });
 
 export type CreateGiftCardSchema = z.infer<typeof createGiftCardSchema>;
-

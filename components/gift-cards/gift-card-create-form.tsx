@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,7 +8,8 @@ import {
   createGiftCardSchema,
   type CreateGiftCardSchema,
 } from "@/lib/validations/gift-card";
-import { PRODUCT_TYPES, calculateExpiryDate } from "@/lib/types/gift-card";
+import { calculateExpiryDate } from "@/lib/types/gift-card";
+import { MenuType } from "@/lib/types/menu-type";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -33,32 +34,68 @@ import { Loader2 } from "lucide-react";
 export function GiftCardCreateForm() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [menuTypes, setMenuTypes] = useState<MenuType[]>([]);
+  const [loadingMenuTypes, setLoadingMenuTypes] = useState(true);
 
   const form = useForm<CreateGiftCardSchema>({
     resolver: zodResolver(createGiftCardSchema),
     defaultValues: {
-      productType: "menu-influences",
+      productType: "",
       numberOfPeople: 2,
       recipientName: "",
       recipientEmail: "",
       purchaserName: "",
       purchaserEmail: "",
-      amount: 90, // 2 personnes × 45€
+      amount: 0,
       expiryDate: calculateExpiryDate(),
       createdOnline: false,
     },
   });
 
-  // Mettre à jour le montant automatiquement
+  // Charger les types de menus actifs
+  useEffect(() => {
+    const fetchMenuTypes = async () => {
+      try {
+        const response = await fetch("/api/menu-types/active");
+        if (response.ok) {
+          const data = await response.json();
+          setMenuTypes(data);
+          // Définir le premier menu comme valeur par défaut
+          if (data.length > 0) {
+            const firstMenu = data[0];
+            form.setValue("productType", firstMenu.name);
+            form.setValue("amount", firstMenu.amount * 2); // 2 personnes par défaut
+          }
+        }
+      } catch (error) {
+        console.error("Erreur lors du chargement des menus:", error);
+        toast.error("Erreur lors du chargement des types de menus");
+      } finally {
+        setLoadingMenuTypes(false);
+      }
+    };
+
+    fetchMenuTypes();
+  }, [form]);
+
+  // Mettre à jour le montant automatiquement quand le type de menu ou le nombre de personnes change
   const watchProductType = form.watch("productType");
   const watchNumberOfPeople = form.watch("numberOfPeople");
 
-  const updateAmount = () => {
-    const product = PRODUCT_TYPES.find((p) => p.value === watchProductType);
-    if (product && watchNumberOfPeople) {
-      form.setValue("amount", product.price * watchNumberOfPeople);
+  useEffect(() => {
+    if (menuTypes.length === 0) return;
+    
+    const menuType = menuTypes.find((m) => m.name === watchProductType);
+    const numberOfPeople = watchNumberOfPeople || 0;
+    
+    if (menuType && numberOfPeople > 0) {
+      const calculatedAmount = menuType.amount * numberOfPeople;
+      form.setValue("amount", calculatedAmount, { shouldValidate: true });
+    } else if (menuType && numberOfPeople === 0) {
+      form.setValue("amount", 0, { shouldValidate: true });
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watchProductType, watchNumberOfPeople, menuTypes]);
 
   const onSubmit = async (data: CreateGiftCardSchema) => {
     setIsLoading(true);
@@ -99,23 +136,30 @@ export function GiftCardCreateForm() {
               <Select
                 onValueChange={(value) => {
                   field.onChange(value);
-                  updateAmount();
                 }}
-                defaultValue={field.value}
+                value={field.value}
+                disabled={loadingMenuTypes}
               >
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder={loadingMenuTypes ? "Chargement..." : "Sélectionnez un menu"} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {PRODUCT_TYPES.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label} - {type.price}€
+                  {menuTypes.map((menuType) => (
+                    <SelectItem key={menuType.id} value={menuType.name}>
+                      {menuType.name} - {menuType.amount.toFixed(2)}€
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              <FormDescription>
+                {menuTypes.length === 0 && !loadingMenuTypes && (
+                  <span className="text-destructive">
+                    Aucun type de menu actif disponible. Créez-en un dans la section Types de menus.
+                  </span>
+                )}
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -134,9 +178,17 @@ export function GiftCardCreateForm() {
                   min={1}
                   max={20}
                   {...field}
+                  value={field.value ?? ""}
                   onChange={(e) => {
-                    field.onChange(parseInt(e.target.value));
-                    updateAmount();
+                    const value = e.target.value;
+                    if (value === "") {
+                      field.onChange(0);
+                    } else {
+                      const numValue = parseInt(value, 10);
+                      if (!isNaN(numValue) && numValue >= 1 && numValue <= 20) {
+                        field.onChange(numValue);
+                      }
+                    }
                   }}
                 />
               </FormControl>
@@ -158,7 +210,13 @@ export function GiftCardCreateForm() {
                   type="number"
                   step="0.01"
                   {...field}
-                  onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                  value={field.value || 0}
+                  onChange={(e) => {
+                    const value = e.target.value === "" ? 0 : parseFloat(e.target.value);
+                    if (!isNaN(value)) {
+                      field.onChange(value);
+                    }
+                  }}
                 />
               </FormControl>
               <FormDescription>

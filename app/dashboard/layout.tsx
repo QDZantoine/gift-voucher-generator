@@ -4,6 +4,8 @@ import { headers } from "next/headers";
 import { DashboardSidebar } from "@/components/dashboard/sidebar";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { SidebarProvider } from "@/components/ui/sidebar";
+import { AuthProvider, AuthGuard } from "@/contexts/AuthContext";
+import { GiftCardProvider } from "@/contexts/GiftCardContext";
 
 export default async function DashboardLayout({
   children,
@@ -19,18 +21,22 @@ export default async function DashboardLayout({
   }
 
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full">
-        <DashboardSidebar />
-        <div className="flex flex-1 flex-col">
-          <DashboardHeader user={session.user} />
-          <main className="flex-1 p-6 bg-slate-50 dark:bg-slate-900">
-            {children}
-          </main>
-        </div>
-      </div>
-    </SidebarProvider>
+    <AuthProvider>
+      <AuthGuard>
+        <GiftCardProvider>
+          <SidebarProvider>
+            <div className="flex min-h-screen w-full">
+              <DashboardSidebar />
+              <div className="flex flex-1 flex-col">
+                <DashboardHeader user={session.user} />
+                <main className="flex-1 p-6 bg-slate-50 dark:bg-slate-900">
+                  {children}
+                </main>
+              </div>
+            </div>
+          </SidebarProvider>
+        </GiftCardProvider>
+      </AuthGuard>
+    </AuthProvider>
   );
 }
-
-

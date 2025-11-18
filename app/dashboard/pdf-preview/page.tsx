@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,18 +14,59 @@ import {
 } from "@/components/ui/select";
 import { Eye, Download, FileText } from "lucide-react";
 import { toast } from "sonner";
+import { MenuType } from "@/lib/types/menu-type";
 
 export default function PDFPreviewPage() {
   const [loading, setLoading] = useState(false);
+  const [menuTypes, setMenuTypes] = useState<MenuType[]>([]);
+  const [loadingMenuTypes, setLoadingMenuTypes] = useState(true);
   const [previewData, setPreviewData] = useState({
     code: "INF-PREVIEW-1234",
-    productType: "Menu Influences",
+    productType: "",
     numberOfPeople: 2,
     recipientName: "Jean Dupont",
-    amount: 90,
+    amount: 0,
     expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
     purchaseDate: new Date().toISOString(),
   });
+
+  // Charger les types de menus actifs
+  useEffect(() => {
+    const fetchMenuTypes = async () => {
+      try {
+        const response = await fetch("/api/menu-types/active");
+        if (response.ok) {
+          const data = await response.json();
+          setMenuTypes(data);
+          // Définir le premier menu comme valeur par défaut
+          if (data.length > 0) {
+            const firstMenu = data[0];
+            setPreviewData((prev) => ({
+              ...prev,
+              productType: firstMenu.name,
+              amount: firstMenu.amount * 2, // 2 personnes par défaut
+            }));
+          }
+        }
+      } catch (error) {
+        console.error("Erreur lors du chargement des menus:", error);
+        toast.error("Erreur lors du chargement des types de menus");
+      } finally {
+        setLoadingMenuTypes(false);
+      }
+    };
+
+    fetchMenuTypes();
+  }, []);
+
+  // Mettre à jour le montant automatiquement quand le type de menu ou le nombre de personnes change
+  useEffect(() => {
+    const menuType = menuTypes.find((m) => m.name === previewData.productType);
+    if (menuType && previewData.numberOfPeople > 0) {
+      const calculatedAmount = menuType.amount * previewData.numberOfPeople;
+      setPreviewData((prev) => ({ ...prev, amount: calculatedAmount }));
+    }
+  }, [previewData.productType, previewData.numberOfPeople, menuTypes]);
 
   const handlePreview = async () => {
     setLoading(true);
@@ -119,21 +160,17 @@ export default function PDFPreviewPage() {
                   onValueChange={(value) =>
                     setPreviewData({ ...previewData, productType: value })
                   }
+                  disabled={loadingMenuTypes}
                 >
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder={loadingMenuTypes ? "Chargement..." : "Sélectionnez un menu"} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Menu Influences">
-                      Menu Influences
-                    </SelectItem>
-                    <SelectItem value="Menu Dégustation">
-                      Menu Dégustation
-                    </SelectItem>
-                    <SelectItem value="Menu Prestige">Menu Prestige</SelectItem>
-                    <SelectItem value="Menu Découverte">
-                      Menu Découverte
-                    </SelectItem>
+                    {menuTypes.map((menuType) => (
+                      <SelectItem key={menuType.id} value={menuType.name}>
+                        {menuType.name} - {menuType.amount.toFixed(2)}€/pers.
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -176,14 +213,13 @@ export default function PDFPreviewPage() {
                   type="number"
                   min="0"
                   step="0.01"
-                  value={previewData.amount}
-                  onChange={(e) =>
-                    setPreviewData({
-                      ...previewData,
-                      amount: parseFloat(e.target.value) || 0,
-                    })
-                  }
+                  value={previewData.amount || 0}
+                  readOnly
+                  className="bg-muted"
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Calculé automatiquement (prix par personne × nombre de personnes)
+                </p>
               </div>
 
               <div className="flex gap-2 pt-4">

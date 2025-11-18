@@ -12,7 +12,6 @@ export function middleware(request: NextRequest) {
     "/api",
     "/success",
     "/cancel",
-    "/admin",
   ];
   const isPublicRoute = publicRoutes.some((route) =>
     pathname.startsWith(route)
@@ -23,12 +22,18 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Pour les routes protégées (/dashboard), vérifier le cookie de session
-  if (pathname.startsWith("/dashboard")) {
+  // Vérifier l'authentification pour toutes les routes protégées
+  const protectedRoutes = ["/dashboard", "/admin"];
+  const isProtectedRoute = protectedRoutes.some((route) =>
+    pathname.startsWith(route)
+  );
+
+  if (isProtectedRoute) {
     // BetterAuth stocke la session dans un cookie
     const sessionToken = request.cookies.get("better-auth.session_token");
 
     if (!sessionToken) {
+      // Rediriger vers la page de connexion
       return NextResponse.redirect(new URL("/login", request.url));
     }
   }

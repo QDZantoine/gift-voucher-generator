@@ -18,7 +18,8 @@ export async function GET(
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    const giftCard = await prisma.giftCard.findUnique({
+    const db = (prisma as any).$client || (prisma as any).$base || prisma;
+    const giftCard = await db.giftCard.findUnique({
       where: { id: params.id },
       include: {
         user: {
@@ -26,6 +27,14 @@ export async function GET(
             id: true,
             name: true,
             email: true,
+          },
+        },
+        menuType: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            amount: true,
           },
         },
       },
@@ -66,8 +75,10 @@ export async function PATCH(
     const body = await request.json();
     const { isUsed } = body;
 
+    const db = (prisma as any).$client || (prisma as any).$base || prisma;
+
     // Vérifier que le bon existe
-    const existingGiftCard = await prisma.giftCard.findUnique({
+    const existingGiftCard = await db.giftCard.findUnique({
       where: { id: params.id },
     });
 
@@ -92,7 +103,7 @@ export async function PATCH(
     }
 
     // Mettre à jour le bon
-    const giftCard = await prisma.giftCard.update({
+    const giftCard = await db.giftCard.update({
       where: { id: params.id },
       data: {
         isUsed,
@@ -104,6 +115,14 @@ export async function PATCH(
             id: true,
             name: true,
             email: true,
+          },
+        },
+        menuType: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            amount: true,
           },
         },
       },
@@ -134,7 +153,8 @@ export async function DELETE(
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    await prisma.giftCard.delete({
+    const db = (prisma as any).$client || (prisma as any).$base || prisma;
+    await db.giftCard.delete({
       where: { id: params.id },
     });
 

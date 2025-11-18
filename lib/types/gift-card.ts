@@ -21,6 +21,12 @@ export interface GiftCardWithUser extends GiftCard {
     name: string | null;
     email: string;
   } | null;
+  menuType?: {
+    id: string;
+    name: string;
+    description: string | null;
+    amount: number;
+  } | null;
 }
 
 // Types de produits disponibles

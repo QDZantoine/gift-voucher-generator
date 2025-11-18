@@ -20,7 +20,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { GiftCardWithUser, getGiftCardStatus } from "@/lib/types/gift-card";
-import { MoreHorizontal, Eye, CheckCircle, Trash2 } from "lucide-react";
+import {
+  MoreHorizontal,
+  Eye,
+  CheckCircle,
+  Trash2,
+  Copy,
+  Check,
+} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { GiftCardDetailsDialog } from "./gift-card-details-dialog";
@@ -47,6 +54,7 @@ export function GiftCardTable({
   const [selectedGiftCard, setSelectedGiftCard] =
     useState<GiftCardWithUser | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   const handleValidate = async (id: string) => {
     setActionLoading(id);
@@ -92,6 +100,17 @@ export function GiftCardTable({
       toast.error("Erreur lors de la suppression");
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  const handleCopyCode = async (code: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopiedCode(code);
+      toast.success("Code copié dans le presse-papiers");
+      setTimeout(() => setCopiedCode(null), 2000);
+    } catch (error) {
+      toast.error("Erreur lors de la copie");
     }
   };
 
@@ -149,11 +168,28 @@ export function GiftCardTable({
             {giftCards.map((giftCard) => (
               <TableRow key={giftCard.id}>
                 <TableCell className="font-mono font-medium">
-                  {giftCard.code}
+                  <div className="flex items-center gap-2">
+                    <span>{giftCard.code}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => handleCopyCode(giftCard.code)}
+                      title="Copier le code"
+                    >
+                      {copiedCode === giftCard.code ? (
+                        <Check className="h-3 w-3 text-green-600" />
+                      ) : (
+                        <Copy className="h-3 w-3" />
+                      )}
+                    </Button>
+                  </div>
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-col">
-                    <span className="font-medium">{giftCard.productType}</span>
+                    <span className="font-medium">
+                      {giftCard.menuType?.name || giftCard.productType}
+                    </span>
                     <span className="text-sm text-muted-foreground">
                       {giftCard.numberOfPeople} pers.
                     </span>

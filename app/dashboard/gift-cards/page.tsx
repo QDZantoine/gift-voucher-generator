@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus } from "lucide-react";
+import { Plus, AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,44 +10,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { GiftCardTable } from "@/components/gift-cards/gift-card-table";
 import { GiftCardFilters } from "@/components/gift-cards/gift-card-filters";
-import { GiftCardWithUser, GiftCardStatus } from "@/lib/types/gift-card";
+import { useGiftCards } from "@/contexts/GiftCardContext";
 
 export default function GiftCardsPage() {
   const router = useRouter();
-  const [giftCards, setGiftCards] = useState<GiftCardWithUser[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [status, setStatus] = useState<GiftCardStatus | "all">("all");
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-
-  useEffect(() => {
-    fetchGiftCards();
-  }, [status, search, page]);
-
-  const fetchGiftCards = async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (status !== "all") params.append("status", status);
-      if (search) params.append("search", search);
-      params.append("page", page.toString());
-      params.append("limit", "10");
-
-      const response = await fetch(`/api/gift-cards?${params}`);
-      if (!response.ok) throw new Error("Erreur lors du chargement");
-
-      const data = await response.json();
-      setGiftCards(data.giftCards);
-      setTotalPages(data.pagination.totalPages);
-    } catch (error) {
-      console.error("Error fetching gift cards:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { state, actions } = useGiftCards();
 
   return (
     <div className="space-y-6">
@@ -74,23 +43,40 @@ export default function GiftCardsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <GiftCardFilters
-            status={status}
-            onStatusChange={setStatus}
-            search={search}
-            onSearchChange={setSearch}
+            status={state.status}
+            onStatusChange={actions.setStatus}
+            search={state.search}
+            onSearchChange={actions.setSearch}
           />
 
+          {state.error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="flex items-center justify-between">
+                <span>{state.error}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={actions.retry}
+                  className="ml-4"
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Réessayer
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+
           <GiftCardTable
-            giftCards={giftCards}
-            loading={loading}
-            page={page}
-            totalPages={totalPages}
-            onPageChange={setPage}
-            onRefresh={fetchGiftCards}
+            giftCards={state.giftCards}
+            loading={state.loading}
+            page={state.page}
+            totalPages={state.totalPages}
+            onPageChange={actions.setPage}
+            onRefresh={actions.retry}
           />
         </CardContent>
       </Card>
     </div>
   );
 }
-
