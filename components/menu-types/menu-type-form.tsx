@@ -90,7 +90,7 @@ export function MenuTypeForm({ initialData }: MenuTypeFormProps) {
         const error = await response.json();
         toast.error(error.error || "Erreur lors de l'enregistrement");
       }
-    } catch (_error) {
+    } catch {
       toast.error("Erreur lors de l'enregistrement");
     } finally {
       setIsSubmitting(false);

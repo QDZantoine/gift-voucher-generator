@@ -152,14 +152,6 @@ export async function POST(request: Request) {
       });
     }
 
-    console.log(
-      `✅ Email envoyé avec succès pour le bon cadeau ${giftCard.code}`,
-      {
-        emailId: emailResult.emailId,
-        retryCount: emailResult.retryCount,
-      }
-    );
-
     return NextResponse.json({
       success: true,
       message: "Email envoyé avec succès",

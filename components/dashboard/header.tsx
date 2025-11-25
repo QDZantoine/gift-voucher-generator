@@ -30,7 +30,7 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
       await signOut();
       toast.success("Déconnexion réussie");
       router.push("/login");
-    } catch (_error) {
+    } catch {
       toast.error("Erreur lors de la déconnexion");
     }
   };

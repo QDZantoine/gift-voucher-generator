@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 export async function POST() {
   try {
@@ -7,7 +7,7 @@ export async function POST() {
     // Test 1: Import de Prisma
     console.log("🔧 Test 1: Import de Prisma...");
     try {
-      const { prisma: _prisma } = await import("@/lib/prisma");
+      await import("@/lib/prisma");
       console.log("✅ Prisma importé avec succès");
     } catch (error) {
       console.error("❌ Erreur import Prisma:", error);
@@ -36,9 +36,7 @@ export async function POST() {
     // Test 3: Import des fonctions email
     console.log("🔧 Test 3: Import des fonctions email...");
     try {
-      const { sendEmailWithRetry: _sendEmailWithRetry, generateGiftCardEmailHTML: _generateGiftCardEmailHTML } = await import(
-        "@/lib/email"
-      );
+      await import("@/lib/email");
       console.log("✅ Fonctions email importées avec succès");
     } catch (error) {
       console.error("❌ Erreur import email:", error);
@@ -51,7 +49,7 @@ export async function POST() {
     // Test 4: Import du générateur PDF
     console.log("🔧 Test 4: Import du générateur PDF...");
     try {
-      const { generateGiftCardPDF: _generateGiftCardPDF } = await import("@/lib/pdf-generator");
+      await import("@/lib/pdf-generator");
       console.log("✅ Générateur PDF importé avec succès");
     } catch (error) {
       console.error("❌ Erreur import PDF:", error);

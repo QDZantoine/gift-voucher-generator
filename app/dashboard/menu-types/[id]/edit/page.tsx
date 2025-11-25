@@ -31,7 +31,7 @@ export default function EditMenuTypePage() {
           toast.error("Type de menu non trouvé");
           router.push("/dashboard/menu-types");
         }
-      } catch (_error) {
+      } catch {
         toast.error("Erreur lors du chargement du type de menu");
         router.push("/dashboard/menu-types");
       } finally {

@@ -1,0 +1,57 @@
+# ============================================
+# CONFIGURATION COOLIFY - INFLUENCES
+# ============================================
+# 
+# Copiez ces variables dans l'interface Coolify :
+# Project → Environment → Environment Variables
+#
+# ⚠️ NE PAS commiter ce fichier avec des vraies valeurs !
+# ============================================
+
+# === ENVIRONNEMENT ===
+NODE_ENV=production
+PRISMA_GENERATE_NO_ENGINE=true
+CI=true
+
+# === BASE DE DONNÉES (PostgreSQL) ===
+# URL avec connection pooling (PgBouncer recommandé)
+DATABASE_URL=postgresql://user:password@host:5432/database?pgbouncer=true&connection_limit=1
+
+# URL de connexion directe (pour les migrations)
+DIRECT_URL=postgresql://user:password@host:5432/database
+
+# === AUTHENTIFICATION (Better Auth) ===
+# Générez un secret aléatoire : openssl rand -base64 32
+BETTER_AUTH_SECRET=VOTRE_SECRET_ALEATOIRE_MINIMUM_32_CARACTERES
+
+# URL publique de votre application
+BETTER_AUTH_URL=https://votre-domaine.com
+NEXT_PUBLIC_APP_URL=https://votre-domaine.com
+
+# === EMAIL (Resend) ===
+# Obtenez votre clé sur https://resend.com/api-keys
+RESEND_API_KEY=re_XXXXXXXXXXXXXXXXXXXXXXXX
+
+# === STRIPE (Paiements) ===
+# Clés depuis https://dashboard.stripe.com/apikeys
+STRIPE_SECRET_KEY=your-stripe-secret-key-here
+NEXT_PUBLIC_STRIPE_PUBLIC_KEY=your-stripe-public-key-here
+
+# Webhook secret depuis https://dashboard.stripe.com/webhooks
+STRIPE_WEBHOOK_SECRET=your-stripe-webhook-secret-here
+
+# ============================================
+# INSTRUCTIONS DE CONFIGURATION COOLIFY
+# ============================================
+#
+# 1. Connectez-vous à votre instance Coolify
+# 2. Sélectionnez votre projet "Influences"
+# 3. Allez dans l'onglet "Environment"
+# 4. Cliquez sur "Add Environment Variable"
+# 5. Ajoutez chaque variable ci-dessus une par une
+# 6. Cliquez sur "Deploy" pour appliquer les changements
+#
+# 📚 Documentation complète : voir COOLIFY_SETUP.md
+#
+# ============================================
+

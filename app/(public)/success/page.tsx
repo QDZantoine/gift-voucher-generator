@@ -105,9 +105,7 @@ function SuccessPageContent() {
 
       const result = await response.json();
 
-      if (response.ok) {
-        console.log("Bon cadeau créé avec succès:", result.giftCard?.code);
-      } else {
+      if (!response.ok) {
         console.error("Erreur API:", result.error);
       }
     } catch (error) {

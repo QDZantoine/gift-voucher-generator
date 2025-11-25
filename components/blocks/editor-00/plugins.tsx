@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
@@ -44,19 +44,10 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
-  Type,
   Image as ImageIcon,
 } from "lucide-react";
 
 export function Plugins() {
-  const [floatingAnchorElem, setFloatingAnchorElem] =
-    useState<HTMLDivElement | null>(null);
-
-  const onRef = (_floatingAnchorElem: HTMLDivElement) => {
-    if (_floatingAnchorElem !== null) {
-      setFloatingAnchorElem(_floatingAnchorElem);
-    }
-  };
 
   return (
     <div className="relative">
@@ -66,7 +57,7 @@ export function Plugins() {
         <RichTextPlugin
           contentEditable={
             <div className="">
-              <div className="" ref={onRef}>
+              <div className="">
                 <ContentEditable placeholder={"Start typing ..."} />
               </div>
             </div>

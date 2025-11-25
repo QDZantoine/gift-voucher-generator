@@ -7,7 +7,9 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function createPrismaClient() {
-  const client = new PrismaClient();
+  const client = new PrismaClient({
+    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+  });
 
   // Utiliser Accelerate si la connection string commence par prisma+postgres://
   // Sinon, utiliser le client standard (pour les migrations avec connection directe)
@@ -27,17 +29,26 @@ export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 // Utiliser une connexion directe même si DATABASE_URL utilise Accelerate
 function createPrismaBaseClient() {
   const databaseUrl = process.env.DATABASE_URL || "";
-  
+
   // Si l'URL utilise Accelerate, utiliser DIRECT_URL si disponible
   // DIRECT_URL est la variable d'environnement standard pour la connexion directe avec Accelerate
-  if (databaseUrl.startsWith("prisma+postgres://") || databaseUrl.startsWith("prisma://")) {
+  if (
+    databaseUrl.startsWith("prisma+postgres://") ||
+    databaseUrl.startsWith("prisma://")
+  ) {
     const directUrl = process.env.DIRECT_URL;
     if (directUrl) {
       // Convertir postgres:// en postgresql:// si nécessaire (Prisma nécessite postgresql://)
-      const normalizedUrl = directUrl.replace(/^postgres:\/\//, "postgresql://");
-      console.log("🔧 [prismaBase] Utilisation de DIRECT_URL:", normalizedUrl.substring(0, 30) + "...");
+      const normalizedUrl = directUrl.replace(
+        /^postgres:\/\//,
+        "postgresql://"
+      );
       // Utiliser l'option datasources pour forcer l'URL directe
       return new PrismaClient({
+        log:
+          process.env.NODE_ENV === "development"
+            ? ["error", "warn"]
+            : ["error"],
         datasources: {
           db: {
             url: normalizedUrl,
@@ -49,9 +60,15 @@ function createPrismaBaseClient() {
       // Format Accelerate: prisma+postgres://user:password@host:port/database?params
       // Format PostgreSQL: postgresql://user:password@host:port/database?params
       const postgresUrl = databaseUrl.replace(/^prisma\+?/, "");
-      console.warn("⚠️  DIRECT_URL n'est pas défini. Conversion de l'URL Accelerate en URL PostgreSQL directe.");
+      console.warn(
+        "⚠️  DIRECT_URL n'est pas défini. Conversion de l'URL Accelerate en URL PostgreSQL directe."
+      );
       // Utiliser l'option datasources pour forcer l'URL directe
       return new PrismaClient({
+        log:
+          process.env.NODE_ENV === "development"
+            ? ["error", "warn"]
+            : ["error"],
         datasources: {
           db: {
             url: postgresUrl,
@@ -60,12 +77,15 @@ function createPrismaBaseClient() {
       });
     }
   }
-  
+
   // Sinon, utiliser l'URL telle quelle
-  return new PrismaClient();
+  return new PrismaClient({
+    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+  });
 }
 
-export const prismaBase = globalForPrisma.prismaBase ?? createPrismaBaseClient();
+export const prismaBase =
+  globalForPrisma.prismaBase ?? createPrismaBaseClient();
 
 // Helper pour obtenir le client Prisma approprié de manière type-safe
 export function getPrismaClient(): PrismaClient {

@@ -89,7 +89,7 @@ export function ExclusionPeriodForm({ initialData }: ExclusionPeriodFormProps) {
           toast.error(error.error || "Erreur lors de l'enregistrement");
         }
       }
-    } catch (_error) {
+    } catch {
       toast.error("Erreur lors de l'enregistrement");
     } finally {
       setIsSubmitting(false);

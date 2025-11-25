@@ -72,7 +72,7 @@ export function ExclusionPeriodTable({
         const error = await response.json();
         toast.error(error.error || "Erreur lors de la suppression");
       }
-    } catch (_error) {
+    } catch {
       toast.error("Erreur lors de la suppression");
     } finally {
       setActionLoading(null);

@@ -96,7 +96,7 @@ export function GiftCardTable({
 
       toast.success("Bon cadeau supprimé");
       onRefresh();
-    } catch (_error) {
+    } catch {
       toast.error("Erreur lors de la suppression");
     } finally {
       setActionLoading(null);
@@ -109,7 +109,7 @@ export function GiftCardTable({
       setCopiedCode(code);
       toast.success("Code copié dans le presse-papiers");
       setTimeout(() => setCopiedCode(null), 2000);
-    } catch (_error) {
+    } catch {
       toast.error("Erreur lors de la copie");
     }
   };

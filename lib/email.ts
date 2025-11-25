@@ -122,12 +122,6 @@ export async function sendEmailWithRetry(
       const { data, error } = await resend.emails.send(emailOptions);
 
       if (!error) {
-        console.log(`✅ Email envoyé avec succès (tentative ${attempt}):`, {
-          emailId: data.id,
-          recipients: recipients.length,
-          subject: emailData.subject,
-        });
-
         return {
           success: true,
           emailId: data.id,

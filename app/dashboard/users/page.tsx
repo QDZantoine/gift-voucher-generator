@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   Card,
@@ -50,7 +50,6 @@ interface User {
 }
 
 export default function UsersPage() {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -63,11 +62,19 @@ export default function UsersPage() {
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<"ADMIN" | "SUPER_ADMIN">("ADMIN");
 
-  useEffect(() => {
-    checkAccess();
+  const fetchUsers = useCallback(async () => {
+    try {
+      const response = await fetch("/api/users");
+      if (response.ok) {
+        const data = await response.json();
+        setUsers(data.users || []);
+      }
+    } catch (error) {
+      console.error("Erreur lors du chargement des utilisateurs:", error);
+    }
   }, []);
 
-  const checkAccess = async () => {
+  const checkAccess = useCallback(async () => {
     try {
       const response = await fetch("/api/auth/session", {
         credentials: "include",
@@ -76,8 +83,6 @@ export default function UsersPage() {
       if (response.ok) {
         const data = await response.json();
         if (data.authenticated && data.user) {
-          setCurrentUser(data.user);
-          
           // Vérifier si l'utilisateur est SUPER_ADMIN
           if (data.user.role !== "SUPER_ADMIN" && data.user.role !== "SUPER_AMDIN") {
             toast.error("Accès refusé : réservé aux Super Administrateurs");
@@ -99,19 +104,11 @@ export default function UsersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [router, fetchUsers]);
 
-  const fetchUsers = async () => {
-    try {
-      const response = await fetch("/api/users");
-      if (response.ok) {
-        const data = await response.json();
-        setUsers(data.users || []);
-      }
-    } catch (error) {
-      console.error("Erreur lors du chargement des utilisateurs:", error);
-    }
-  };
+  useEffect(() => {
+    checkAccess();
+  }, [checkAccess]);
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();

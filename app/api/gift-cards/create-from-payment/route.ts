@@ -10,10 +10,7 @@ import { generateGiftCardPDF } from "@/lib/pdf-generator";
 
 export async function POST(request: NextRequest) {
   try {
-    console.log("🔧 Mode debug: Début de la création du bon cadeau");
-
     const body = await request.json();
-    console.log("📋 Données reçues:", JSON.stringify(body, null, 2));
 
     const {
       productType,
@@ -34,14 +31,11 @@ export async function POST(request: NextRequest) {
       !purchaserEmail ||
       !amount
     ) {
-      console.log("❌ Données manquantes");
       return NextResponse.json(
         { error: "Données manquantes" },
         { status: 400 }
       );
     }
-
-    console.log("✅ Validation des données OK");
 
     // Vérifier si un bon cadeau avec ce payment_id existe déjà
     const db = getPrismaClient();
@@ -62,9 +56,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Générer un code unique
-    console.log("🔧 Génération du code unique...");
     const code = generateGiftCardCode();
-    console.log(`✅ Code généré: ${code}`);
 
     // Trouver le MenuType correspondant
     const menuType = await db.menuType.findUnique({
@@ -72,7 +64,6 @@ export async function POST(request: NextRequest) {
     });
 
     if (!menuType) {
-      console.log(`❌ MenuType "${productType}" non trouvé`);
       return NextResponse.json(
         { error: `Type de menu "${productType}" non trouvé` },
         { status: 400 }
@@ -82,10 +73,8 @@ export async function POST(request: NextRequest) {
     // Calculer la date d'expiration (1 an)
     const expiryDate = new Date();
     expiryDate.setFullYear(expiryDate.getFullYear() + 1);
-    console.log(`✅ Date d'expiration: ${expiryDate.toISOString()}`);
 
     // Créer le bon cadeau avec la relation MenuType
-    console.log("🔧 Création du bon cadeau en base de données...");
     let giftCard = await db.giftCard.create({
       data: {
         code,
@@ -106,11 +95,8 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    console.log("Bon cadeau créé depuis le paiement:", giftCard.code);
-
     // Envoyer l'email avec le PDF du bon cadeau
     try {
-      console.log("📧 Génération du PDF...");
       // Générer le PDF
       const pdfBuffer = await generateGiftCardPDF({
         code: giftCard.code,
@@ -124,7 +110,6 @@ export async function POST(request: NextRequest) {
         templateId: giftCard.templateId || undefined, // Utiliser le template du MenuType
       });
 
-      console.log("📧 Génération du HTML de l'email...");
       // Générer le HTML de l'email
       const emailHTML = generateGiftCardEmailHTML({
         code: giftCard.code,
@@ -136,7 +121,6 @@ export async function POST(request: NextRequest) {
         purchaseDate: giftCard.purchaseDate.toISOString(),
       });
 
-      console.log("📧 Préparation des données d'email...");
       // Préparer les données d'email avec bonnes pratiques
       // Envoyer uniquement à l'acheteur
       const emailData: EmailData = {
@@ -171,20 +155,12 @@ export async function POST(request: NextRequest) {
         },
       };
 
-      console.log("📧 Envoi de l'email à l'acheteur...");
       // Envoyer l'email à l'acheteur avec retry logic
       const emailResult = await sendEmailWithRetry(emailData, 3);
 
       let emailSent = false;
       if (emailResult.success) {
         emailSent = true;
-        console.log(
-          `✅ Email envoyé à l'acheteur pour le bon cadeau ${giftCard.code}`,
-          {
-            emailId: emailResult.emailId,
-            retryCount: emailResult.retryCount,
-          }
-        );
       } else {
         console.error("❌ Échec de l'envoi d'email à l'acheteur:", emailResult.error);
       }

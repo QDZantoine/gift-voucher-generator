@@ -87,9 +87,7 @@ export async function POST(request: NextRequest) {
           customMessage: metadata.customMessage || null,
           templateId: menuTypeData?.templateId || metadata.templateId || null, // Priorité au template du MenuType
         },
-      });
-
-      console.log("Bon cadeau créé:", giftCard.code);
+    });
 
       // Envoyer l'email avec le PDF du bon cadeau
       try {
@@ -165,10 +163,6 @@ export async function POST(request: NextRequest) {
           // L'email pourra être renvoyé manuellement depuis le dashboard
         } else {
           emailSent = true;
-          console.log(`✅ Email envoyé à l'acheteur via webhook pour ${giftCard.code}`, {
-            emailId: emailResult.emailId,
-            retryCount: emailResult.retryCount,
-          });
         }
 
         // Marquer l'email comme envoyé
@@ -176,10 +170,6 @@ export async function POST(request: NextRequest) {
           where: { id: giftCard.id },
           data: { emailSent },
         });
-
-        console.log(
-          `Emails envoyés pour le bon cadeau ${giftCard.code}`
-        );
       } catch (emailError) {
         console.error("Erreur lors de l'envoi de l'email:", emailError);
         // Ne pas faire échouer le webhook si l'email échoue

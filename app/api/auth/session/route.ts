@@ -17,7 +17,6 @@ export async function GET() {
     try {
       // Essayer d'abord avec prismaBase
       const { prismaBase } = await import("@/lib/prisma");
-      console.log(`[API Session] Recherche utilisateur avec ID: ${session.user.id}, Email: ${session.user.email}`);
       
       // Essayer de trouver par email d'abord (plus fiable)
       let user = await prismaBase.user.findUnique({
@@ -35,11 +34,7 @@ export async function GET() {
       
       if (user) {
         userRole = user.role || "ADMIN";
-      } else {
-        console.warn(`[API Session] Utilisateur non trouvé avec ID: ${session.user.id} ou Email: ${session.user.email}`);
       }
-      
-      console.log(`[API Session] Rôle final retourné pour ${session.user.email}:`, userRole);
     } catch (roleError) {
       // Si l'erreur vient de la récupération du rôle, on continue avec ADMIN par défaut
       console.error("Erreur lors de la récupération du rôle:", roleError);
