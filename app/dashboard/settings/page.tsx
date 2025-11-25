@@ -39,11 +39,6 @@ export default function SettingsPage() {
 
   useEffect(() => {
     fetchUser();
-    // Forcer un refresh après un court délai pour s'assurer que les données sont à jour
-    const timeoutId = setTimeout(() => {
-      fetchUser();
-    }, 1000);
-    return () => clearTimeout(timeoutId);
   }, []);
 
   const fetchUser = async () => {
@@ -55,9 +50,6 @@ export default function SettingsPage() {
         const data = await response.json();
         if (data.authenticated && data.user) {
           setUser(data.user);
-          // Debug: afficher le rôle dans la console
-          console.log("Rôle utilisateur récupéré:", data.user.role);
-          console.log("Données utilisateur complètes:", data.user);
         }
       }
     } catch (error) {
@@ -86,13 +78,6 @@ export default function SettingsPage() {
         <p className="text-muted-foreground">
           Gérez les paramètres de votre application
         </p>
-        {/* Debug temporaire */}
-        {user && (
-          <div className="mt-2 p-2 bg-yellow-100 dark:bg-yellow-900 rounded text-sm">
-            Debug: Rôle actuel = &quot;{user.role}&quot; | Est SUPER_ADMIN?{" "}
-            {user.role === "SUPER_ADMIN" ? "OUI" : "NON"}
-          </div>
-        )}
       </div>
 
       <div className="grid gap-6">

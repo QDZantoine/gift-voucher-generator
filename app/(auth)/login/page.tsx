@@ -15,7 +15,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { toast } from "sonner";
-import Link from "next/link";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -85,16 +84,10 @@ export default function LoginPage() {
               />
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
+          <CardFooter>
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Connexion..." : "Se connecter"}
             </Button>
-            <div className="text-sm text-center text-muted-foreground">
-              Pas de compte?{" "}
-              <Link href="/register" className="text-primary hover:underline">
-                Créer un compte admin
-              </Link>
-            </div>
           </CardFooter>
         </form>
       </Card>

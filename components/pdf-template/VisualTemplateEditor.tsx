@@ -19,7 +19,14 @@ import {
 } from "@/components/ui/select";
 import { ImageUpload } from "./ImageUpload";
 import { ColorPresets } from "./ColorPresets";
-import { Save, Palette, Type, Image as ImageIcon, Layout, Eye } from "lucide-react";
+import {
+  Save,
+  Palette,
+  Type,
+  Image as ImageIcon,
+  Layout,
+  Eye,
+} from "lucide-react";
 import Image from "next/image";
 import { PDFTemplate, GiftCardTemplateData } from "@/lib/pdf-templates";
 import { SerializedEditorState } from "lexical";

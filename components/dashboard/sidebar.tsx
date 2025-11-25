@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
   Gift,
@@ -11,6 +12,7 @@ import {
   FileText,
   Palette,
   Utensils,
+  Users,
 } from "lucide-react";
 import {
   Sidebar,
@@ -69,6 +71,40 @@ const menuItems = [
 
 export function DashboardSidebar() {
   const pathname = usePathname();
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await fetch("/api/auth/session", {
+          credentials: "include",
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.authenticated && data.user) {
+            setUserRole(data.user.role);
+          }
+        }
+      } catch (error) {
+        console.error("Erreur lors de la récupération de l'utilisateur:", error);
+      }
+    };
+    fetchUser();
+  }, []);
+
+  // Ajouter l'item Utilisateurs uniquement pour les SUPER_ADMIN
+  const displayMenuItems = [
+    ...menuItems,
+    ...(userRole === "SUPER_ADMIN" || userRole === "SUPER_AMDIN"
+      ? [
+          {
+            title: "Utilisateurs",
+            href: "/dashboard/users",
+            icon: Users,
+          },
+        ]
+      : []),
+  ];
 
   return (
     <Sidebar>
@@ -83,7 +119,7 @@ export function DashboardSidebar() {
           <SidebarGroupLabel>Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => {
+              {displayMenuItems.map((item) => {
                 const isActive = pathname === item.href;
                 return (
                   <SidebarMenuItem key={item.href}>
