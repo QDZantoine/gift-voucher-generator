@@ -101,7 +101,7 @@ const DEFAULT_STYLES: TemplateStyle = {
   borderRadius: 10,
   padding: 25,
   margin: 8,
-  giftIcon: "🎁",
+  giftIcon: "https://em-content.zobj.net/source/apple/391/wrapped-gift_1f381.png",
   restaurantLogoType: "text",
   restaurantLogoUrl: undefined,
   restaurantName: "influences",
@@ -133,7 +133,17 @@ const FONT_OPTIONS = [
   { value: "Poppins", label: "Poppins (Friendly)" },
 ];
 
-const GIFT_ICONS = ["🎁", "🍽️", "💎", "⭐", "🌟", "✨", "🎉", "🎊"];
+// Utiliser des URLs d'images au lieu d'emojis pour compatibilité PDF
+const GIFT_ICONS = [
+  { emoji: "🎁", url: "https://em-content.zobj.net/source/apple/391/wrapped-gift_1f381.png", label: "Cadeau" },
+  { emoji: "🍽️", url: "https://em-content.zobj.net/source/apple/391/fork-and-knife-with-plate_1f37d-fe0f.png", label: "Restaurant" },
+  { emoji: "💎", url: "https://em-content.zobj.net/source/apple/391/gem-stone_1f48e.png", label: "Diamant" },
+  { emoji: "⭐", url: "https://em-content.zobj.net/source/apple/391/star_2b50.png", label: "Étoile" },
+  { emoji: "🌟", url: "https://em-content.zobj.net/source/apple/391/glowing-star_1f31f.png", label: "Étoile brillante" },
+  { emoji: "✨", url: "https://em-content.zobj.net/source/apple/391/sparkles_2728.png", label: "Étincelles" },
+  { emoji: "🎉", url: "https://em-content.zobj.net/source/apple/391/party-popper_1f389.png", label: "Fête" },
+  { emoji: "🎊", url: "https://em-content.zobj.net/source/apple/391/confetti-ball_1f38a.png", label: "Confettis" },
+];
 
 export function VisualTemplateEditor({
   template,
@@ -374,9 +384,11 @@ export function VisualTemplateEditor({
       }
       
       .gift-icon {
-        font-size: 45px;
-        margin-bottom: 12px;
+        width: 60px;
+        height: 60px;
+        margin: 0 auto 12px auto;
         display: block;
+        object-fit: contain;
       }
       
       .title {
@@ -549,7 +561,7 @@ export function VisualTemplateEditor({
         </div>
         
         <div class="content">
-          <span class="gift-icon">${styles.giftIcon}</span>
+          <img src="${styles.giftIcon}" alt="Gift icon" class="gift-icon" />
           <h1 class="title">${
             styles.giftCardTitleState
               ? serializedToHTML(styles.giftCardTitleState)
@@ -557,8 +569,6 @@ export function VisualTemplateEditor({
           }</h1>
           
           <div class="code">{{code}}</div>
-          
-          <div class="amount">{{amount}} €</div>
           
           <div class="message">${welcomeHTML}</div>
           
@@ -692,12 +702,10 @@ export function VisualTemplateEditor({
         </div>
         
         <div class="content">
-          <span class="gift-icon">${styles.giftIcon}</span>
+          <img src="${styles.giftIcon}" alt="Gift icon" class="gift-icon" />
           <h1 class="title">${giftCardTitleHTML}</h1>
           
           <div class="code">{{code}}</div>
-          
-          <div class="amount">{{amount}} €</div>
           
           <p class="message">${welcomeHTML}</p>
           
@@ -1163,20 +1171,24 @@ export function VisualTemplateEditor({
                         <div className="grid grid-cols-4 gap-2">
                           {GIFT_ICONS.map((icon) => (
                             <Button
-                              key={icon}
+                              key={icon.url}
                               variant={
-                                styles.giftIcon === icon ? "default" : "outline"
+                                styles.giftIcon === icon.url ? "default" : "outline"
                               }
                               size="sm"
                               onClick={() =>
-                                handleStyleChange("giftIcon", icon)
+                                handleStyleChange("giftIcon", icon.url)
                               }
-                              className="text-lg"
+                              className="text-lg h-auto py-2"
+                              title={icon.label}
                             >
-                              {icon}
+                              {icon.emoji}
                             </Button>
                           ))}
                         </div>
+                        <p className="text-xs text-gray-500 mt-2">
+                          Les icônes seront correctement affichées dans le PDF
+                        </p>
                       </CardContent>
                     </Card>
                   </div>
