@@ -117,7 +117,6 @@ export async function GET(request: NextRequest) {
       menuType: giftCard.menuType,
       numberOfPeople: giftCard.numberOfPeople,
       recipientName: giftCard.recipientName,
-      recipientEmail: giftCard.recipientEmail,
       amount: giftCard.amount,
       expiryDate: giftCard.expiryDate.toISOString(),
       isUsed: giftCard.isUsed,

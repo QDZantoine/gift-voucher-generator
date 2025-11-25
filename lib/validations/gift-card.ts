@@ -20,11 +20,6 @@ export const createGiftCardSchema = z.object({
     })
     .min(2, "Le nom doit contenir au moins 2 caractères")
     .max(100, "Le nom ne peut pas dépasser 100 caractères"),
-  recipientEmail: z
-    .string({
-      required_error: "L'email du destinataire est requis",
-    })
-    .email("Email invalide"),
   purchaserName: z
     .string({
       required_error: "Le nom de l'acheteur est requis",

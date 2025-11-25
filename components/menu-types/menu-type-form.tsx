@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -21,9 +21,17 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
+import { PDFTemplate, DEFAULT_TEMPLATES } from "@/lib/pdf-templates";
 
 interface MenuTypeFormProps {
   initialData?: MenuTypeFormValues & { id: string };
@@ -32,6 +40,18 @@ interface MenuTypeFormProps {
 export function MenuTypeForm({ initialData }: MenuTypeFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [templates, setTemplates] = useState<PDFTemplate[]>([]);
+
+  // Charger les templates disponibles
+  useEffect(() => {
+    const defaultTemplates = DEFAULT_TEMPLATES.map((template, index) => ({
+      ...template,
+      id: `template-${index}`,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }));
+    setTemplates(defaultTemplates.filter((t) => t.isActive));
+  }, []);
 
   const form = useForm<MenuTypeFormValues>({
     resolver: zodResolver(MenuTypeSchema),
@@ -40,6 +60,7 @@ export function MenuTypeForm({ initialData }: MenuTypeFormProps) {
       description: "",
       amount: 0,
       isActive: true,
+      templateId: undefined,
     },
   });
 
@@ -69,7 +90,7 @@ export function MenuTypeForm({ initialData }: MenuTypeFormProps) {
         const error = await response.json();
         toast.error(error.error || "Erreur lors de l'enregistrement");
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error("Erreur lors de l'enregistrement");
     } finally {
       setIsSubmitting(false);
@@ -99,7 +120,7 @@ export function MenuTypeForm({ initialData }: MenuTypeFormProps) {
                     />
                   </FormControl>
                   <FormDescription>
-                    Le nom du menu tel qu'il apparaîtra dans les bons cadeaux
+                    Le nom du menu tel qu&apos;il apparaîtra dans les bons cadeaux
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -171,6 +192,38 @@ export function MenuTypeForm({ initialData }: MenuTypeFormProps) {
                       onCheckedChange={field.onChange}
                     />
                   </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="templateId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Template PDF pour l&apos;envoi d&apos;email</FormLabel>
+                  <Select
+                    value={field.value || "none"}
+                    onValueChange={(value) => field.onChange(value === "none" ? undefined : value)}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Aucun template (utiliser le template par défaut)" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="none">Aucun template (par défaut)</SelectItem>
+                      {templates.map((template) => (
+                        <SelectItem key={template.id} value={template.id}>
+                          {template.name} {template.productType && `(${template.productType})`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Sélectionnez un template PDF à utiliser lors de l&apos;envoi d&apos;email pour les bons cadeaux de ce type de menu
+                  </FormDescription>
+                  <FormMessage />
                 </FormItem>
               )}
             />

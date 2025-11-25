@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
@@ -33,7 +33,7 @@ export default function ValidationHistoryPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  const fetchValidations = async () => {
+  const fetchValidations = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({
@@ -54,11 +54,11 @@ export default function ValidationHistoryPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, search]);
 
   useEffect(() => {
     fetchValidations();
-  }, [page, search]);
+  }, [fetchValidations]);
 
   if (loading) {
     return (

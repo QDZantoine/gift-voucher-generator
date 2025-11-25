@@ -43,7 +43,6 @@ export function GiftCardCreateForm() {
       productType: "",
       numberOfPeople: 2,
       recipientName: "",
-      recipientEmail: "",
       purchaserName: "",
       purchaserEmail: "",
       amount: 0,
@@ -228,44 +227,30 @@ export function GiftCardCreateForm() {
         />
 
         <div className="border-t pt-6">
-          <h3 className="text-lg font-semibold mb-4">Destinataire</h3>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <FormField
-              control={form.control}
-              name="recipientName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nom complet</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Jean Dupont" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="recipientEmail"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="email"
-                      placeholder="jean.dupont@example.com"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
+          <h3 className="text-lg font-semibold mb-4">Destinataire du bon cadeau</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Le nom qui apparaîtra sur le bon cadeau
+          </p>
+          <FormField
+            control={form.control}
+            name="recipientName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nom du destinataire</FormLabel>
+                <FormControl>
+                  <Input placeholder="Jean Dupont" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
 
         <div className="border-t pt-6">
-          <h3 className="text-lg font-semibold mb-4">Acheteur</h3>
+          <h3 className="text-lg font-semibold mb-4">Informations de l&apos;acheteur</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            L&apos;acheteur recevra le bon cadeau avec le PDF par email
+          </p>
           <div className="grid gap-4 sm:grid-cols-2">
             <FormField
               control={form.control}

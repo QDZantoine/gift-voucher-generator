@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Edit, Eye, Trash2, Save, X, Play, Palette } from "lucide-react";
+import { Plus, Edit, Eye, Save, X, Play, Palette } from "lucide-react";
 import { toast } from "sonner";
 import {
   PDFTemplate,
@@ -149,7 +149,7 @@ export default function PDFTemplatesPage() {
         newWindow.document.write(fullHtml);
         newWindow.document.close();
       }
-    } catch (error) {
+    } catch {
       toast.error("Erreur lors de la prévisualisation");
     }
   };
@@ -164,6 +164,11 @@ export default function PDFTemplatesPage() {
         body: JSON.stringify({
           ...previewData,
           templateId: template.id,
+          // Envoyer aussi le template complet avec toutes les modifications
+          template: {
+            html: template.html,
+            css: template.css,
+          },
         }),
       });
 
@@ -183,7 +188,7 @@ export default function PDFTemplatesPage() {
       } else {
         toast.error("Erreur lors de la génération du PDF");
       }
-    } catch (error) {
+    } catch {
       toast.error("Erreur lors de la génération du PDF");
     }
   };
@@ -339,7 +344,13 @@ export default function PDFTemplatesPage() {
                     disabled={loadingMenuTypes}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={loadingMenuTypes ? "Chargement..." : "Sélectionnez un menu"} />
+                      <SelectValue
+                        placeholder={
+                          loadingMenuTypes
+                            ? "Chargement..."
+                            : "Sélectionnez un menu"
+                        }
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {menuTypes.map((menuType) => (
@@ -374,7 +385,8 @@ export default function PDFTemplatesPage() {
                     className="bg-muted"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Calculé automatiquement (prix par personne × nombre de personnes)
+                    Calculé automatiquement (prix par personne × nombre de
+                    personnes)
                   </p>
                 </div>
                 <div>
@@ -440,7 +452,13 @@ export default function PDFTemplatesPage() {
                       disabled={loadingMenuTypes}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder={loadingMenuTypes ? "Chargement..." : "Sélectionnez un menu"} />
+                        <SelectValue
+                          placeholder={
+                            loadingMenuTypes
+                              ? "Chargement..."
+                              : "Sélectionnez un menu"
+                          }
+                        />
                       </SelectTrigger>
                       <SelectContent>
                         {menuTypes.map((menuType) => (
@@ -527,6 +545,7 @@ export default function PDFTemplatesPage() {
           }}
           onCancel={() => setIsVisualEditing(false)}
           previewData={previewData}
+          menuTypes={menuTypes}
         />
       )}
     </div>

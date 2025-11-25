@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -16,7 +16,7 @@ export default function ExclusionPeriodsPage() {
   const [search, setSearch] = useState("");
   const [isRecurring, setIsRecurring] = useState<string>("all");
 
-  const fetchPeriods = async () => {
+  const fetchPeriods = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({
@@ -37,11 +37,11 @@ export default function ExclusionPeriodsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, search, isRecurring]);
 
   useEffect(() => {
     fetchPeriods();
-  }, [page, search, isRecurring]);
+  }, [fetchPeriods]);
 
   return (
     <div className="space-y-6">

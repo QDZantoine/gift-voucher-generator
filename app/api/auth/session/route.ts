@@ -15,8 +15,8 @@ export async function GET() {
     // Récupérer le rôle de l'utilisateur depuis la base de données
     let userRole = "ADMIN"; // Valeur par défaut
     try {
-      // Essayer d'abord avec prismaBase, puis avec prisma si ça ne fonctionne pas
-      const { prismaBase, prisma } = await import("@/lib/prisma");
+      // Essayer d'abord avec prismaBase
+      const { prismaBase } = await import("@/lib/prisma");
       console.log(`[API Session] Recherche utilisateur avec ID: ${session.user.id}, Email: ${session.user.email}`);
       
       // Essayer de trouver par email d'abord (plus fiable)
@@ -34,12 +34,6 @@ export async function GET() {
       }
       
       if (user) {
-        console.log(`[API Session] Utilisateur trouvé:`, {
-          id: user.id,
-          email: user.email,
-          role: user.role,
-          roleType: typeof user.role,
-        });
         userRole = user.role || "ADMIN";
       } else {
         console.warn(`[API Session] Utilisateur non trouvé avec ID: ${session.user.id} ou Email: ${session.user.email}`);

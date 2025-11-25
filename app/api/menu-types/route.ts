@@ -115,6 +115,7 @@ export async function POST(request: NextRequest) {
         description: validatedData.description,
         amount: validatedData.amount,
         isActive: validatedData.isActive,
+        templateId: validatedData.templateId || null,
       },
     });
 

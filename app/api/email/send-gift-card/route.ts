@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prismaBase } from "@/lib/prisma";
 import {
   sendEmailWithRetry,
   generateGiftCardEmailHTML,
@@ -12,20 +12,48 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     // Support pour les deux formats : avec giftCardId ou avec données directes
-    let giftCard;
+    let giftCard: {
+      code: string;
+      productType: string;
+      numberOfPeople: number;
+      recipientName: string;
+      purchaserName: string;
+      purchaserEmail: string;
+      amount: number;
+      expiryDate: Date;
+      purchaseDate: Date;
+      customMessage?: string | null;
+      templateId?: string | null;
+      id?: string;
+    };
 
     if (body.giftCardId) {
-      // Récupérer le bon cadeau depuis la base de données
-      giftCard = await prisma.giftCard.findUnique({
+      // Récupérer le bon cadeau depuis la base de données avec le MenuType pour avoir le templateId
+      const giftCardWithMenuType = await prismaBase.giftCard.findUnique({
         where: { id: body.giftCardId },
+        include: {
+          menuType: {
+            select: {
+              templateId: true,
+            },
+          },
+        },
       });
 
-      if (!giftCard) {
+      if (!giftCardWithMenuType) {
         return NextResponse.json(
           { error: "Bon cadeau non trouvé" },
           { status: 404 }
         );
       }
+      
+      // Si le giftCard n'a pas de templateId mais que le MenuType en a un, l'utiliser
+      const templateId = giftCardWithMenuType.templateId || giftCardWithMenuType.menuType?.templateId || null;
+      
+      giftCard = {
+        ...giftCardWithMenuType,
+        templateId,
+      };
     } else {
       // Utiliser les données fournies directement (pour les tests)
       giftCard = {
@@ -33,7 +61,8 @@ export async function POST(request: Request) {
         productType: body.productType,
         numberOfPeople: body.numberOfPeople,
         recipientName: body.recipientName,
-        recipientEmail: body.recipientEmail,
+        purchaserName: body.purchaserName,
+        purchaserEmail: body.purchaserEmail,
         amount: body.amount,
         expiryDate: new Date(body.expiryDate),
         purchaseDate: new Date(body.purchaseDate),
@@ -68,12 +97,13 @@ export async function POST(request: Request) {
     });
 
     // Préparer les données d'email avec bonnes pratiques
+    // Envoyer uniquement à l'acheteur
     const emailData: EmailData = {
-      to: giftCard.recipientEmail,
+      to: giftCard.purchaserEmail,
       subject: `🎁 Votre bon cadeau Restaurant Influences - ${giftCard.code}`,
       html: emailHTML,
       text: `Bonjour ${
-        giftCard.recipientName
+        giftCard.purchaserName
       },\n\nVotre bon cadeau Restaurant Influences est prêt !\n\nCode: ${
         giftCard.code
       }\nMontant: ${giftCard.amount.toFixed(2)} €\nMenu: ${
@@ -116,7 +146,7 @@ export async function POST(request: Request) {
 
     // Marquer l'email comme envoyé dans la base de données (si c'est un vrai bon cadeau)
     if (body.giftCardId) {
-      await prisma.giftCard.update({
+      await prismaBase.giftCard.update({
         where: { id: body.giftCardId },
         data: { emailSent: true },
       });
@@ -134,7 +164,7 @@ export async function POST(request: Request) {
       success: true,
       message: "Email envoyé avec succès",
       giftCardCode: giftCard.code,
-      recipientEmail: giftCard.recipientEmail,
+      recipientEmail: giftCard.purchaserEmail,
       emailId: emailResult.emailId,
       retryCount: emailResult.retryCount,
     });

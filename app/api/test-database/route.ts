@@ -1,19 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getPrismaClient } from "@/lib/prisma";
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
+    const db = getPrismaClient();
     console.log("🔧 Test de la base de données - Début");
 
     // Test 1: Connexion à la base de données
     console.log("🔧 Test 1: Connexion à la base de données...");
     try {
-      await prisma.$connect();
+      await db.$connect();
       console.log("✅ Connexion à la base de données OK");
     } catch (error) {
       console.error("❌ Erreur connexion DB:", error);
       return NextResponse.json(
-        { error: "Erreur connexion DB", details: error.message },
+        { error: "Erreur connexion DB", details: error instanceof Error ? error.message : String(error) },
         { status: 500 }
       );
     }
@@ -21,12 +22,12 @@ export async function POST(request: NextRequest) {
     // Test 2: Compter les bons cadeaux existants
     console.log("🔧 Test 2: Compter les bons cadeaux...");
     try {
-      const count = await prisma.giftCard.count();
+      const count = await db.giftCard.count();
       console.log(`✅ Nombre de bons cadeaux: ${count}`);
     } catch (error) {
       console.error("❌ Erreur comptage:", error);
       return NextResponse.json(
-        { error: "Erreur comptage", details: error.message },
+        { error: "Erreur comptage", details: error instanceof Error ? error.message : String(error) },
         { status: 500 }
       );
     }
@@ -34,13 +35,14 @@ export async function POST(request: NextRequest) {
     // Test 3: Créer un bon cadeau de test
     console.log("🔧 Test 3: Création d'un bon cadeau de test...");
     try {
-      const testGiftCard = await prisma.giftCard.create({
+      const testGiftCard = await db.giftCard.create({
         data: {
           code: "TEST-DEBUG-001",
           productType: "Test",
           numberOfPeople: 1,
           recipientName: "Test User",
-          recipientEmail: "test@example.com",
+          purchaserName: "Test Purchaser",
+          purchaserEmail: "test@example.com",
           amount: 50.0,
           purchaseDate: new Date(),
           expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 an
@@ -52,14 +54,14 @@ export async function POST(request: NextRequest) {
       console.log("✅ Bon cadeau de test créé:", testGiftCard.code);
 
       // Supprimer le bon cadeau de test
-      await prisma.giftCard.delete({
+      await db.giftCard.delete({
         where: { id: testGiftCard.id },
       });
       console.log("✅ Bon cadeau de test supprimé");
     } catch (error) {
       console.error("❌ Erreur création bon cadeau:", error);
       return NextResponse.json(
-        { error: "Erreur création bon cadeau", details: error.message },
+        { error: "Erreur création bon cadeau", details: error instanceof Error ? error.message : String(error) },
         { status: 500 }
       );
     }
@@ -109,7 +111,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("❌ Erreur générale:", error);
     return NextResponse.json(
-      { error: "Erreur générale", details: error.message },
+      { error: "Erreur générale", details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }

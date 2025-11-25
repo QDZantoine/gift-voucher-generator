@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getPrismaClient } from "@/lib/prisma";
 import { ExclusionPeriodSchema } from "@/lib/validations/exclusion-period";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
+    const db = getPrismaClient();
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
@@ -49,10 +50,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Compter le total
-    const total = await prisma.exclusionPeriod.count({ where });
+    const total = await db.exclusionPeriod.count({ where });
 
     // Récupérer les périodes
-    const periods = await prisma.exclusionPeriod.findMany({
+    const periods = await db.exclusionPeriod.findMany({
       where,
       orderBy: { startDate: "asc" },
       skip,
@@ -85,13 +86,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
+    const db = getPrismaClient();
     const body = await request.json();
 
     // Valider les données
     const validatedData = ExclusionPeriodSchema.parse(body);
 
     // Vérifier les chevauchements
-    const overlapping = await prisma.exclusionPeriod.findMany({
+    const overlapping = await db.exclusionPeriod.findMany({
       where: {
         OR: [
           {
@@ -115,7 +117,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Créer la période
-    const period = await prisma.exclusionPeriod.create({
+    const period = await db.exclusionPeriod.create({
       data: {
         name: validatedData.name,
         description: validatedData.description,

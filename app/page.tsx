@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Gift, Loader2, CreditCard } from "lucide-react";
+import { Loader2, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { MenuType } from "@/lib/types/menu-type";
 
@@ -34,8 +34,7 @@ const orderSchema = z.object({
     .number()
     .min(1, "Minimum 1 personne")
     .max(20, "Maximum 20 personnes"),
-  recipientName: z.string().min(2, "Nom requis"),
-  recipientEmail: z.string().email("Email invalide"),
+  recipientName: z.string().min(2, "Nom du destinataire requis"),
   purchaserName: z.string().min(2, "Nom requis"),
   purchaserEmail: z.string().email("Email invalide"),
   customMessage: z.string().optional(),
@@ -54,7 +53,6 @@ export default function HomePage() {
       numberOfPeople: 2,
       menuType: "",
       recipientName: "",
-      recipientEmail: "",
       purchaserName: "",
       purchaserEmail: "",
       customMessage: "",
@@ -132,7 +130,12 @@ export default function HomePage() {
             Offrez Influences
           </h1> */}
           <div className="flex justify-center items-center mb-8">
-          <Image src="/images/logo-bleu.svg" alt="Influences Logo" width={600} height={600} />
+            <Image
+              src="/images/logo-bleu.svg"
+              alt="Influences Logo"
+              width={600}
+              height={600}
+            />
           </div>
           <p className="font-lato text-lg sm:text-xl text-[#1A2B4B]/80 max-w-2xl mx-auto px-4 sm:px-0">
             Offrez un moment de partage à vos proches ! En quelques clics,
@@ -253,7 +256,7 @@ export default function HomePage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="font-lato font-medium text-[#1A2B4B]">
-                        Nom complet *
+                        Nom du destinataire *
                       </FormLabel>
                       <FormControl>
                         <Input
@@ -262,53 +265,8 @@ export default function HomePage() {
                           className="font-lato border-[#1A2B4B]/20 focus:border-[#1A2B4B] focus:ring-2 focus:ring-[#1A2B4B]/20 transition-colors"
                         />
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="recipientEmail"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="font-lato font-medium text-[#1A2B4B]">
-                        Email *
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          type="email"
-                          placeholder="jean.dupont@example.com"
-                          {...field}
-                          className="font-lato border-[#1A2B4B]/20 focus:border-[#1A2B4B] focus:ring-2 focus:ring-[#1A2B4B]/20 transition-colors"
-                        />
-                      </FormControl>
                       <FormDescription className="font-lato text-[#1A2B4B]/70">
-                        Le bon cadeau sera envoyé à cette adresse
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="customMessage"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="font-lato font-medium text-[#1A2B4B]">
-                        Message personnalisé
-                      </FormLabel>
-                      <FormControl>
-                        <textarea
-                          placeholder="Écrivez un message personnalisé qui apparaîtra sur le bon cadeau..."
-                          {...field}
-                          rows={4}
-                          className="font-lato w-full px-3 py-2 border border-[#1A2B4B]/20 rounded-md focus:border-[#1A2B4B] focus:ring-2 focus:ring-[#1A2B4B]/20 focus:outline-none transition-colors resize-none"
-                        />
-                      </FormControl>
-                      <FormDescription className="font-lato text-[#1A2B4B]/70">
-                        Ce message apparaîtra sur le bon cadeau PDF
+                        Le nom qui apparaîtra sur le bon cadeau
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -320,7 +278,7 @@ export default function HomePage() {
             <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl">
               <CardHeader className="pb-4 sm:pb-6">
                 <CardTitle className="font-playfair-display text-xl sm:text-2xl font-semibold text-[#1A2B4B]">
-                  Vos coordonnées
+                  Vos informations
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4 sm:space-y-6">
@@ -361,7 +319,31 @@ export default function HomePage() {
                         />
                       </FormControl>
                       <FormDescription className="font-lato text-[#1A2B4B]/70">
-                        Pour recevoir la confirmation de commande
+                        Le bon cadeau avec le PDF sera envoyé à cette adresse
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="customMessage"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="font-lato font-medium text-[#1A2B4B]">
+                        Message personnalisé
+                      </FormLabel>
+                      <FormControl>
+                        <textarea
+                          placeholder="Écrivez un message personnalisé qui apparaîtra sur le bon cadeau..."
+                          {...field}
+                          rows={4}
+                          className="font-lato w-full px-3 py-2 border border-[#1A2B4B]/20 rounded-md focus:border-[#1A2B4B] focus:ring-2 focus:ring-[#1A2B4B]/20 focus:outline-none transition-colors resize-none"
+                        />
+                      </FormControl>
+                      <FormDescription className="font-lato text-[#1A2B4B]/70">
+                        Ce message apparaîtra sur le bon cadeau PDF
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

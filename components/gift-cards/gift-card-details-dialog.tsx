@@ -114,13 +114,26 @@ export function GiftCardDetailsDialog({
             <h3 className="font-semibold text-sm text-muted-foreground mb-3">
               DESTINATAIRE
             </h3>
+            <div className="flex items-start gap-3">
+              <User className="h-5 w-5 text-muted-foreground mt-0.5" />
+              <div>
+                <p className="text-sm font-medium">Nom</p>
+                <p className="text-sm text-muted-foreground">
+                  {giftCard.recipientName}
+                </p>
+              </div>
+            </div>
+
+            <h3 className="font-semibold text-sm text-muted-foreground mb-3 mt-6">
+              ACHETEUR
+            </h3>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="flex items-start gap-3">
                 <User className="h-5 w-5 text-muted-foreground mt-0.5" />
                 <div>
                   <p className="text-sm font-medium">Nom</p>
                   <p className="text-sm text-muted-foreground">
-                    {giftCard.recipientName}
+                    {giftCard.purchaserName}
                   </p>
                 </div>
               </div>
@@ -130,7 +143,7 @@ export function GiftCardDetailsDialog({
                 <div>
                   <p className="text-sm font-medium">Email</p>
                   <p className="text-sm text-muted-foreground">
-                    {giftCard.recipientEmail}
+                    {giftCard.purchaserEmail}
                   </p>
                 </div>
               </div>

@@ -79,10 +79,9 @@ model GiftCard {
   productType     String // menu influences, menu dégustation, etc. (déprécié, utiliser menuTypeId)
   menuTypeId      String? // ID du type de menu (relation)
   numberOfPeople  Int // Nombre de personnes
-  recipientName   String // Nom du destinataire
-  recipientEmail  String // Email du destinataire
+  recipientName   String // Nom de la personne à qui le bon cadeau est offert (affiché sur le PDF)
   purchaserName   String // Nom de l'acheteur
-  purchaserEmail  String // Email de l'acheteur
+  purchaserEmail  String // Email de l'acheteur (c'est lui qui reçoit l'email avec le PDF)
   amount          Float // Montant en euros
   purchaseDate    DateTime  @default(now())
   expiryDate      DateTime // Date d'expiration
@@ -122,6 +121,7 @@ model MenuType {
   description String? // Description du menu
   amount      Float // Prix par personne en euros
   isActive    Boolean  @default(true) // Si le menu est actif et disponible
+  templateId  String? // ID du template PDF à utiliser pour l'envoi d'email
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

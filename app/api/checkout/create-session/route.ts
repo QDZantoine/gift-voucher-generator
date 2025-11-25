@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
-import { prisma } from "@/lib/prisma";
+import { getPrismaClient } from "@/lib/prisma";
 import { z } from "zod";
 
 const orderSchema = z.object({
   menuType: z.string().min(1, "Le type de menu est requis"),
   numberOfPeople: z.number().min(1).max(20),
   recipientName: z.string().min(2),
-  recipientEmail: z.string().email(),
   purchaserName: z.string().min(2),
   purchaserEmail: z.string().email(),
   customMessage: z.string().optional(),
@@ -24,14 +23,14 @@ export async function POST(request: NextRequest) {
       menuType,
       numberOfPeople,
       recipientName,
-      recipientEmail,
       purchaserName,
       purchaserEmail,
       customMessage,
     } = validatedData;
 
     // Vérifier que le type de menu existe et est actif
-    const menuTypeData = await prisma.menuType.findUnique({
+    const db = getPrismaClient();
+    const menuTypeData = await db.menuType.findUnique({
       where: { name: menuType },
     });
 
@@ -81,7 +80,6 @@ export async function POST(request: NextRequest) {
         menuType,
         numberOfPeople: numberOfPeople.toString(),
         recipientName,
-        recipientEmail,
         purchaserName,
         purchaserEmail,
         amount: amount.toString(),

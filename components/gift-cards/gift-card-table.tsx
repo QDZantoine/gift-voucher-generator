@@ -96,7 +96,7 @@ export function GiftCardTable({
 
       toast.success("Bon cadeau supprimé");
       onRefresh();
-    } catch (error) {
+    } catch (_error) {
       toast.error("Erreur lors de la suppression");
     } finally {
       setActionLoading(null);
@@ -109,7 +109,7 @@ export function GiftCardTable({
       setCopiedCode(code);
       toast.success("Code copié dans le presse-papiers");
       setTimeout(() => setCopiedCode(null), 2000);
-    } catch (error) {
+    } catch (_error) {
       toast.error("Erreur lors de la copie");
     }
   };
@@ -199,7 +199,7 @@ export function GiftCardTable({
                   <div className="flex flex-col">
                     <span>{giftCard.recipientName}</span>
                     <span className="text-sm text-muted-foreground">
-                      {giftCard.recipientEmail}
+                      {giftCard.purchaserEmail}
                     </span>
                   </div>
                 </TableCell>
@@ -215,7 +215,7 @@ export function GiftCardTable({
                 <TableCell>
                   <EmailStatusBadge
                     emailSent={giftCard.emailSent}
-                    recipientEmail={giftCard.recipientEmail}
+                    recipientEmail={giftCard.purchaserEmail}
                   />
                 </TableCell>
                 <TableCell className="text-right">

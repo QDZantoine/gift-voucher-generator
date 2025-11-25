@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prismaBase } from "@/lib/prisma";
 import { MenuTypeSchema } from "@/lib/types/menu-type";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
@@ -20,7 +20,7 @@ export async function GET(
 
     const { id } = await params;
 
-    const db = (prisma as any).$client || (prisma as any).$base || prisma;
+    const db = prismaBase;
     const menuType = await db.menuType.findUnique({
       where: { id },
     });
@@ -59,7 +59,7 @@ export async function PATCH(
     // Valider les données
     const validatedData = MenuTypeSchema.partial().parse(body);
 
-    const db = (prisma as any).$client || (prisma as any).$base || prisma;
+    const db = prismaBase;
 
     // Vérifier que le type de menu existe
     const existingMenuType = await db.menuType.findUnique({
@@ -101,6 +101,9 @@ export async function PATCH(
         ...(validatedData.isActive !== undefined && {
           isActive: validatedData.isActive,
         }),
+        ...(validatedData.templateId !== undefined && {
+          templateId: validatedData.templateId || null,
+        }),
       },
     });
 
@@ -134,7 +137,7 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    const db = (prisma as any).$client || (prisma as any).$base || prisma;
+    const db = prismaBase;
 
     // Vérifier que le type de menu existe
     const existingMenuType = await db.menuType.findUnique({
@@ -149,7 +152,7 @@ export async function DELETE(
     }
 
     // Vérifier si des bons cadeaux utilisent ce type de menu (via la relation)
-    const giftCardsUsingMenu = await prisma.giftCard.count({
+    const giftCardsUsingMenu = await prismaBase.giftCard.count({
       where: { menuTypeId: id },
     });
 

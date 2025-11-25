@@ -78,7 +78,7 @@ export function GiftCardValidationCard({
         const error = await response.json();
         toast.error(error.error || "Erreur lors de la validation");
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error("Erreur lors de la validation");
     } finally {
       setValidating(false);

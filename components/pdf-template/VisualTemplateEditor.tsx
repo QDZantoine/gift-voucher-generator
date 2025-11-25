@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -17,14 +17,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { ImageUpload } from "./ImageUpload";
 import { ColorPresets } from "./ColorPresets";
-import { Eye, Save, Upload, Palette, Type, Image, Layout } from "lucide-react";
+import { Save, Palette, Type, Image as ImageIcon, Layout, Eye } from "lucide-react";
+import Image from "next/image";
 import { PDFTemplate, GiftCardTemplateData } from "@/lib/pdf-templates";
 import { SerializedEditorState } from "lexical";
 import { Editor as ShadcnEditor } from "@/components/blocks/editor-00/editor";
@@ -82,6 +78,7 @@ interface VisualTemplateEditorProps {
   onSave: (template: PDFTemplate) => void;
   onCancel: () => void;
   previewData: GiftCardTemplateData;
+  menuTypes?: Array<{ id: string; name: string; amount: number }>;
 }
 
 const DEFAULT_STYLES: TemplateStyle = {
@@ -136,23 +133,37 @@ export function VisualTemplateEditor({
   onSave,
   onCancel,
   previewData,
+  menuTypes = [],
 }: VisualTemplateEditorProps) {
   const [styles, setStyles] = useState<TemplateStyle>(DEFAULT_STYLES);
   const [activeTab, setActiveTab] = useState("content");
-  const [previewHtml, setPreviewHtml] = useState("");
   const [previewScale, setPreviewScale] = useState(0.8);
+
+  // États éditables du template
+  const [templateName, setTemplateName] = useState(template.name);
+  const [templateDescription, setTemplateDescription] = useState(
+    template.description
+  );
+  const [templateProductType, setTemplateProductType] = useState(
+    template.productType
+  );
+  const [templateIsActive, setTemplateIsActive] = useState(template.isActive);
 
   // Helpers: minimal conversion between Lexical serialized state and HTML
   const serializedToHTML = useCallback(
     (state?: SerializedEditorState): string => {
       if (!state) return "";
       try {
-        const root: any = (state as any).root;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const root = (state as any).root as { children?: unknown[] };
         if (!root || !Array.isArray(root.children)) return "";
         const paragraphs = root.children
-          .map((p: any) => {
-            if (!p || !Array.isArray(p.children)) return "";
-            const text = p.children
+          .map((p: unknown) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const paragraph = p as any;
+            if (!paragraph || !Array.isArray(paragraph.children)) return "";
+            const text = paragraph.children
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               .map((n: any) => (typeof n.text === "string" ? n.text : ""))
               .join("");
             return `<p>${text}</p>`;
@@ -166,38 +177,118 @@ export function VisualTemplateEditor({
     []
   );
 
-  const plainToSerialized = useCallback(
-    (text: string): SerializedEditorState => {
-      const node: any = {
-        root: {
-          children: [
-            {
-              children: [
-                {
-                  detail: 0,
-                  format: 0,
-                  mode: "normal",
-                  style: "",
-                  text,
-                  type: "text",
-                  version: 1,
-                },
-              ],
-              direction: "ltr",
-              format: "",
-              indent: 0,
-              type: "paragraph",
+  const htmlToSerialized = useCallback(
+    (html: string): SerializedEditorState => {
+      // Parser le HTML et créer des paragraphes Lexical
+      // Gérer les <br> comme des sauts de ligne
+      // Gérer les <strong> comme du texte en gras
+
+      // Diviser par <br> pour créer des paragraphes
+      const parts = html.split(/<br\s*\/?>/gi);
+
+      const paragraphs = parts.map((part) => {
+        const textNodes = [];
+
+        // Parser les balises strong
+        const strongRegex = /<strong>(.*?)<\/strong>/gi;
+        let lastIndex = 0;
+        let match;
+
+        const cleanPart = part.trim();
+
+        while ((match = strongRegex.exec(cleanPart)) !== null) {
+          // Texte avant le strong
+          if (match.index > lastIndex) {
+            const beforeText = cleanPart.substring(lastIndex, match.index);
+            if (beforeText) {
+              textNodes.push({
+                detail: 0,
+                format: 0, // format: 0 = normal
+                mode: "normal",
+                style: "",
+                text: beforeText,
+                type: "text",
+                version: 1,
+              });
+            }
+          }
+
+          // Texte en gras
+          textNodes.push({
+            detail: 0,
+            format: 1, // format: 1 = bold
+            mode: "normal",
+            style: "",
+            text: match[1],
+            type: "text",
+            version: 1,
+          });
+
+          lastIndex = strongRegex.lastIndex;
+        }
+
+        // Texte restant après le dernier strong
+        if (lastIndex < cleanPart.length) {
+          const remainingText = cleanPart.substring(lastIndex);
+          if (remainingText) {
+            textNodes.push({
+              detail: 0,
+              format: 0,
+              mode: "normal",
+              style: "",
+              text: remainingText,
+              type: "text",
               version: 1,
-            },
-          ],
+            });
+          }
+        }
+
+        // Si aucun strong n'a été trouvé et qu'il y a du texte
+        if (textNodes.length === 0 && cleanPart) {
+          textNodes.push({
+            detail: 0,
+            format: 0,
+            mode: "normal",
+            style: "",
+            text: cleanPart,
+            type: "text",
+            version: 1,
+          });
+        }
+
+        return {
+          children:
+            textNodes.length > 0
+              ? textNodes
+              : [
+                  {
+                    detail: 0,
+                    format: 0,
+                    mode: "normal",
+                    style: "",
+                    text: "",
+                    type: "text",
+                    version: 1,
+                  },
+                ],
+          direction: "ltr",
+          format: "",
+          indent: 0,
+          type: "paragraph",
+          version: 1,
+        };
+      });
+
+      return {
+        root: {
+          children: paragraphs,
           direction: "ltr",
           format: "",
           indent: 0,
           type: "root",
           version: 1,
         },
-      };
-      return node as SerializedEditorState;
+      } as SerializedEditorState;
     },
     []
   );
@@ -557,29 +648,51 @@ export function VisualTemplateEditor({
   };
 
   const handleSave = () => {
-    // Générer le HTML personnalisé avec les textes modifiables
+    // Générer le HTML personnalisé avec les valeurs réelles des styles
+    const welcomeHTML = styles.welcomeMessageState
+      ? serializedToHTML(styles.welcomeMessageState)
+      : styles.welcomeMessage;
+    const validityHTML = styles.validityMessageState
+      ? serializedToHTML(styles.validityMessageState)
+      : styles.validityMessage;
+    const restaurantSubtitleHTML = styles.restaurantSubtitleState
+      ? serializedToHTML(styles.restaurantSubtitleState)
+      : styles.restaurantSubtitle;
+    const giftCardTitleHTML = styles.giftCardTitleState
+      ? serializedToHTML(styles.giftCardTitleState)
+      : styles.giftCardTitle;
+    const footerTitleHTML = styles.footerTitleState
+      ? serializedToHTML(styles.footerTitleState)
+      : styles.footerTitle;
+    const contactInfoHTML = styles.contactInfoState
+      ? serializedToHTML(styles.contactInfoState)
+      : styles.contactInfo;
+    const openingHoursHTML = styles.openingHoursState
+      ? serializedToHTML(styles.openingHoursState)
+      : styles.openingHours;
+
     const customHtml = `
       <div class="container">
         <div class="header">
           <div class="logo">
-            {{#if restaurantLogoUrl}}
-              <img src="{{restaurantLogoUrl}}" alt="Logo restaurant" style="max-height: 60px; max-width: 200px; object-fit: contain;" />
-            {{else}}
-              {{restaurantName}}
-            {{/if}}
+            ${
+              styles.restaurantLogoType === "logo" && styles.restaurantLogoUrl
+                ? `<img src="${styles.restaurantLogoUrl}" alt="Logo restaurant" style="max-height: 60px; max-width: 200px; object-fit: contain;" />`
+                : styles.restaurantName
+            }
           </div>
-          <div class="subtitle">{{restaurantSubtitle}}</div>
+          <div class="subtitle">${restaurantSubtitleHTML}</div>
         </div>
         
         <div class="content">
-          <span class="gift-icon">{{giftIcon}}</span>
-          <h1 class="title">{{giftCardTitle}}</h1>
+          <span class="gift-icon">${styles.giftIcon}</span>
+          <h1 class="title">${giftCardTitleHTML}</h1>
           
           <div class="code">{{code}}</div>
           
           <div class="amount">{{amount}} €</div>
           
-          <p class="message">{{welcomeMessage}}</p>
+          <p class="message">${welcomeHTML}</p>
           
           {{#if customMessage}}
           <div class="custom-message">
@@ -609,16 +722,16 @@ export function VisualTemplateEditor({
           
           <div class="validity">
             <p class="validity-text">
-              {{validityMessage}}
+              ${validityHTML}
             </p>
           </div>
         </div>
         
         <div class="footer">
-          <h3 class="footer-title">{{footerTitle}}</h3>
+          <h3 class="footer-title">${footerTitleHTML}</h3>
           <div class="contact-info">
-            {{contactInfo}}<br><br>
-            {{openingHours}}
+            ${contactInfoHTML}<br><br>
+            ${openingHoursHTML}
           </div>
         </div>
       </div>
@@ -626,6 +739,10 @@ export function VisualTemplateEditor({
 
     const updatedTemplate: PDFTemplate = {
       ...template,
+      name: templateName,
+      description: templateDescription,
+      productType: templateProductType,
+      isActive: templateIsActive,
       html: customHtml,
       css: generateCSS(styles),
       updatedAt: new Date(),
@@ -649,634 +766,784 @@ export function VisualTemplateEditor({
           </div>
         </div>
 
-        <div className="flex h-[calc(98vh-80px)]">
-          {/* Panneau de contrôle */}
-          <div className="w-[700px] border-r overflow-y-auto">
+        <div className="flex h-[calc(98vh-80px)] overflow-hidden">
+          {/* Panneau de contrôle - Pleine largeur maintenant */}
+          <div className="flex-1 flex flex-col overflow-hidden bg-gray-50">
             <Tabs
               value={activeTab}
               onValueChange={setActiveTab}
-              className="h-full"
+              className="flex-1 flex flex-col overflow-hidden min-h-0"
             >
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="content" className="text-xs">
-                  <Type className="w-3 h-3" />
+              <TabsList className="grid w-full grid-cols-5 flex-shrink-0 bg-white">
+                <TabsTrigger
+                  value="content"
+                  className="text-xs flex items-center gap-1"
+                >
+                  <Type className="w-4 h-4" />
+                  <span className="hidden sm:inline">Contenu</span>
                 </TabsTrigger>
-                <TabsTrigger value="colors" className="text-xs">
-                  <Palette className="w-3 h-3" />
+                <TabsTrigger
+                  value="colors"
+                  className="text-xs flex items-center gap-1"
+                >
+                  <Palette className="w-4 h-4" />
+                  <span className="hidden sm:inline">Couleurs</span>
                 </TabsTrigger>
-                <TabsTrigger value="layout" className="text-xs">
-                  <Layout className="w-3 h-3" />
+                <TabsTrigger
+                  value="layout"
+                  className="text-xs flex items-center gap-1"
+                >
+                  <Layout className="w-4 h-4" />
+                  <span className="hidden sm:inline">Mise en page</span>
                 </TabsTrigger>
-                <TabsTrigger value="images" className="text-xs">
-                  <Image className="w-3 h-3" />
+                <TabsTrigger
+                  value="images"
+                  className="text-xs flex items-center gap-1"
+                >
+                  <ImageIcon className="w-4 h-4" />
+                  <span className="hidden sm:inline">Images</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="preview"
+                  className="text-xs flex items-center gap-1"
+                >
+                  <Eye className="w-4 h-4" />
+                  <span className="hidden sm:inline">Prévisualisation</span>
                 </TabsTrigger>
               </TabsList>
 
-              <div className="p-4">
-                <TabsContent value="content" className="space-y-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-sm">
-                        Informations du Template
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div>
-                        <Label htmlFor="templateName">Nom du template</Label>
-                        <Input
-                          id="templateName"
-                          value={template.name}
-                          readOnly
-                          className="bg-gray-50"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="productType">Type de menu</Label>
-                        <Input
-                          id="productType"
-                          value={template.productType}
-                          readOnly
-                          className="bg-gray-50"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="description">Description</Label>
-                        <Textarea
-                          id="description"
-                          value={template.description}
-                          readOnly
-                          className="bg-gray-50"
-                          rows={3}
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-sm">
-                        Textes du Restaurant
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div>
-                        <Label htmlFor="restaurantLogoType">
-                          Type d'affichage du nom
-                        </Label>
-                        <Select
-                          value={styles.restaurantLogoType}
-                          onValueChange={(value: "text" | "logo") =>
-                            handleStyleChange("restaurantLogoType", value)
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="text">Titre texte</SelectItem>
-                            <SelectItem value="logo">Logo image</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {styles.restaurantLogoType === "text" ? (
+              <TabsContent
+                value="content"
+                className="flex-1 min-h-0 mt-0 overflow-hidden"
+              >
+                <ScrollArea className="h-full">
+                  <div className="p-4 space-y-4">
+                    <Card className="border-2 border-blue-100 bg-blue-50/30">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base font-semibold flex items-center gap-2">
+                          ⚙️ Configuration du Template
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
                         <div>
-                          <Label htmlFor="restaurantName">
-                            Nom du Restaurant
+                          <Label
+                            htmlFor="templateName"
+                            className="text-sm font-medium"
+                          >
+                            Nom du template
                           </Label>
                           <Input
-                            id="restaurantName"
-                            value={styles.restaurantName}
-                            onChange={(e) =>
-                              handleStyleChange(
-                                "restaurantName",
-                                e.target.value
-                              )
-                            }
-                            placeholder="Nom de votre restaurant"
+                            id="templateName"
+                            value={templateName}
+                            onChange={(e) => setTemplateName(e.target.value)}
+                            placeholder="Ex: Menu Influences - Classique"
+                            className="mt-1"
                           />
                         </div>
-                      ) : (
                         <div>
-                          <Label htmlFor="restaurantLogo">
-                            Logo du Restaurant
+                          <Label
+                            htmlFor="productType"
+                            className="text-sm font-medium"
+                          >
+                            Type de menu associé
                           </Label>
-                          <div className="space-y-2">
-                            {styles.restaurantLogoUrl && (
-                              <div className="flex items-center space-x-2">
-                                <img
-                                  src={styles.restaurantLogoUrl}
-                                  alt="Logo restaurant"
-                                  className="h-12 w-auto object-contain border rounded"
-                                />
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    handleStyleChange(
-                                      "restaurantLogoUrl",
-                                      undefined
-                                    )
-                                  }
+                          <Select
+                            value={templateProductType}
+                            onValueChange={setTemplateProductType}
+                          >
+                            <SelectTrigger className="mt-1">
+                              <SelectValue placeholder="Sélectionnez un type de menu" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {menuTypes.map((menuType) => (
+                                <SelectItem
+                                  key={menuType.id}
+                                  value={menuType.name}
                                 >
-                                  Supprimer
-                                </Button>
-                              </div>
-                            )}
-                            <ImageUpload
-                              onImageUpload={(url) =>
-                                handleStyleChange("restaurantLogoUrl", url)
-                              }
-                              accept="image/jpeg,image/png,image/svg+xml"
-                            />
-                            <p className="text-xs text-gray-500">
-                              Formats acceptés : JPEG, PNG, SVG (max 2MB)
+                                  {menuType.name} - {menuType.amount.toFixed(2)}
+                                  €/pers.
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label
+                            htmlFor="description"
+                            className="text-sm font-medium"
+                          >
+                            Description
+                          </Label>
+                          <Textarea
+                            id="description"
+                            value={templateDescription}
+                            onChange={(e) =>
+                              setTemplateDescription(e.target.value)
+                            }
+                            placeholder="Ex: Template élégant pour le menu principal"
+                            rows={2}
+                            className="mt-1"
+                          />
+                        </div>
+                        <Separator />
+                        <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                          <div className="flex-1">
+                            <Label
+                              htmlFor="isActive"
+                              className="text-sm font-medium cursor-pointer"
+                            >
+                              Template actif
+                            </Label>
+                            <p className="text-xs text-gray-500 mt-1">
+                              {templateIsActive
+                                ? "Ce template sera utilisé pour générer les PDF"
+                                : "Ce template est désactivé"}
                             </p>
                           </div>
-                        </div>
-                      )}
-                      <div>
-                        <Label>Sous-titre</Label>
-                        <div className="border rounded">
-                          <ShadcnEditor
-                            editorSerializedState={
-                              styles.restaurantSubtitleState ||
-                              plainToSerialized(styles.restaurantSubtitle)
-                            }
-                            onSerializedChange={(value) =>
-                              setStyles((prev) => ({
-                                ...prev,
-                                restaurantSubtitleState: value,
-                              }))
-                            }
+                          <Switch
+                            id="isActive"
+                            checked={templateIsActive}
+                            onCheckedChange={setTemplateIsActive}
                           />
                         </div>
-                      </div>
-                      <div>
-                        <Label>Titre du Bon Cadeau</Label>
-                        <div className="border rounded">
-                          <ShadcnEditor
-                            editorSerializedState={
-                              styles.giftCardTitleState ||
-                              plainToSerialized(styles.giftCardTitle)
-                            }
-                            onSerializedChange={(value) =>
-                              setStyles((prev) => ({
-                                ...prev,
-                                giftCardTitleState: value,
-                              }))
-                            }
-                          />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                        {templateIsActive && (
+                          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                            <p className="text-xs text-green-800">
+                              ✓ Ce template sera utilisé pour les bons cadeaux
+                              de type <strong>{templateProductType}</strong>
+                            </p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
 
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-sm">
-                        Messages Personnalisés
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div>
-                        <Label>Message d'Accueil</Label>
-                        <div className="border rounded">
-                          <ShadcnEditor
-                            editorSerializedState={
-                              styles.welcomeMessageState ||
-                              plainToSerialized(
-                                styles.welcomeMessage.replace(/<[^>]+>/g, "")
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base font-semibold flex items-center gap-2">
+                          🏢 Identité du Restaurant
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <Label htmlFor="restaurantLogoType">
+                            Type d&apos;affichage du nom
+                          </Label>
+                          <Select
+                            value={styles.restaurantLogoType}
+                            onValueChange={(value: "text" | "logo") =>
+                              handleStyleChange("restaurantLogoType", value)
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="text">Titre texte</SelectItem>
+                              <SelectItem value="logo">Logo image</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {styles.restaurantLogoType === "text" ? (
+                          <div>
+                            <Label htmlFor="restaurantName">
+                              Nom du Restaurant
+                            </Label>
+                            <Input
+                              id="restaurantName"
+                              value={styles.restaurantName}
+                              onChange={(e) =>
+                                handleStyleChange(
+                                  "restaurantName",
+                                  e.target.value
+                                )
+                              }
+                              placeholder="Nom de votre restaurant"
+                            />
+                          </div>
+                        ) : (
+                          <div>
+                            <Label htmlFor="restaurantLogo">
+                              Logo du Restaurant
+                            </Label>
+                            <div className="space-y-2">
+                              {styles.restaurantLogoUrl && (
+                                <div className="flex items-center space-x-2">
+                                  <div className="relative h-12 w-24">
+                                    <Image
+                                      src={styles.restaurantLogoUrl}
+                                      alt="Logo restaurant"
+                                      fill
+                                      className="object-contain border rounded"
+                                    />
+                                  </div>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                      handleStyleChange("restaurantLogoUrl", "")
+                                    }
+                                  >
+                                    Supprimer
+                                  </Button>
+                                </div>
+                              )}
+                              <ImageUpload
+                                onImageUpload={(url) =>
+                                  handleStyleChange("restaurantLogoUrl", url)
+                                }
+                                accept="image/jpeg,image/png,image/svg+xml"
+                              />
+                              <p className="text-xs text-gray-500">
+                                Formats acceptés : JPEG, PNG, SVG (max 2MB)
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                        <div>
+                          <Label>Sous-titre</Label>
+                          <div className="border rounded">
+                            <ShadcnEditor
+                              editorSerializedState={
+                                styles.restaurantSubtitleState ||
+                                htmlToSerialized(styles.restaurantSubtitle)
+                              }
+                              onSerializedChange={(value) =>
+                                setStyles((prev) => ({
+                                  ...prev,
+                                  restaurantSubtitleState: value,
+                                }))
+                              }
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <Label>Titre du Bon Cadeau</Label>
+                          <div className="border rounded">
+                            <ShadcnEditor
+                              editorSerializedState={
+                                styles.giftCardTitleState ||
+                                htmlToSerialized(styles.giftCardTitle)
+                              }
+                              onSerializedChange={(value) =>
+                                setStyles((prev) => ({
+                                  ...prev,
+                                  giftCardTitleState: value,
+                                }))
+                              }
+                            />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base font-semibold flex items-center gap-2">
+                          💬 Messages Personnalisés
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <Label>Message d&apos;Accueil</Label>
+                          <div className="border rounded">
+                            <ShadcnEditor
+                              editorSerializedState={
+                                styles.welcomeMessageState ||
+                                htmlToSerialized(styles.welcomeMessage)
+                              }
+                              onSerializedChange={(value) =>
+                                setStyles((prev) => ({
+                                  ...prev,
+                                  welcomeMessageState: value,
+                                }))
+                              }
+                            />
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Utilisez {"{{ recipientName }}"} pour le nom du
+                            destinataire
+                          </p>
+                        </div>
+                        <div>
+                          <Label>Message de Validité</Label>
+                          <div className="border rounded">
+                            <ShadcnEditor
+                              editorSerializedState={
+                                styles.validityMessageState ||
+                                htmlToSerialized(styles.validityMessage)
+                              }
+                              onSerializedChange={(value) =>
+                                setStyles((prev) => ({
+                                  ...prev,
+                                  validityMessageState: value,
+                                }))
+                              }
+                            />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base font-semibold flex items-center gap-2">
+                          📞 Informations de Contact
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <Label>Titre du Pied de Page</Label>
+                          <div className="border rounded">
+                            <ShadcnEditor
+                              editorSerializedState={
+                                styles.footerTitleState ||
+                                htmlToSerialized(styles.footerTitle)
+                              }
+                              onSerializedChange={(value) =>
+                                setStyles((prev) => ({
+                                  ...prev,
+                                  footerTitleState: value,
+                                }))
+                              }
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <Label>Informations de Contact</Label>
+                          <div className="border rounded">
+                            <ShadcnEditor
+                              editorSerializedState={
+                                styles.contactInfoState ||
+                                htmlToSerialized(styles.contactInfo)
+                              }
+                              onSerializedChange={(value) =>
+                                setStyles((prev) => ({
+                                  ...prev,
+                                  contactInfoState: value,
+                                }))
+                              }
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <Label>Horaires d&apos;Ouverture</Label>
+                          <div className="border rounded">
+                            <ShadcnEditor
+                              editorSerializedState={
+                                styles.openingHoursState ||
+                                htmlToSerialized(styles.openingHours)
+                              }
+                              onSerializedChange={(value) =>
+                                setStyles((prev) => ({
+                                  ...prev,
+                                  openingHoursState: value,
+                                }))
+                              }
+                            />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base font-semibold flex items-center gap-2">
+                          🎁 Icône du Bon Cadeau
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-4 gap-2">
+                          {GIFT_ICONS.map((icon) => (
+                            <Button
+                              key={icon}
+                              variant={
+                                styles.giftIcon === icon ? "default" : "outline"
+                              }
+                              size="sm"
+                              onClick={() =>
+                                handleStyleChange("giftIcon", icon)
+                              }
+                              className="text-lg"
+                            >
+                              {icon}
+                            </Button>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+
+              <TabsContent
+                value="colors"
+                className="flex-1 min-h-0 mt-0 overflow-hidden"
+              >
+                <ScrollArea className="h-full">
+                  <div className="p-4 space-y-4">
+                    <ColorPresets
+                      onPresetSelect={(preset) => {
+                        setStyles((prev) => ({
+                          ...prev,
+                          ...preset,
+                        }));
+                      }}
+                    />
+
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base font-semibold flex items-center gap-2">
+                          🎨 Palette de Couleurs
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <Label htmlFor="primaryColor">
+                            Couleur Principale
+                          </Label>
+                          <div className="flex gap-2">
+                            <Input
+                              id="primaryColor"
+                              type="color"
+                              value={styles.primaryColor}
+                              onChange={(e) =>
+                                handleStyleChange(
+                                  "primaryColor",
+                                  e.target.value
+                                )
+                              }
+                              className="w-12 h-8 p-1"
+                            />
+                            <Input
+                              value={styles.primaryColor}
+                              onChange={(e) =>
+                                handleStyleChange(
+                                  "primaryColor",
+                                  e.target.value
+                                )
+                              }
+                              className="flex-1"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <Label htmlFor="secondaryColor">
+                            Couleur Secondaire
+                          </Label>
+                          <div className="flex gap-2">
+                            <Input
+                              id="secondaryColor"
+                              type="color"
+                              value={styles.secondaryColor}
+                              onChange={(e) =>
+                                handleStyleChange(
+                                  "secondaryColor",
+                                  e.target.value
+                                )
+                              }
+                              className="w-12 h-8 p-1"
+                            />
+                            <Input
+                              value={styles.secondaryColor}
+                              onChange={(e) =>
+                                handleStyleChange(
+                                  "secondaryColor",
+                                  e.target.value
+                                )
+                              }
+                              className="flex-1"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <Label htmlFor="backgroundColor">
+                            Couleur de Fond
+                          </Label>
+                          <div className="flex gap-2">
+                            <Input
+                              id="backgroundColor"
+                              type="color"
+                              value={styles.backgroundColor}
+                              onChange={(e) =>
+                                handleStyleChange(
+                                  "backgroundColor",
+                                  e.target.value
+                                )
+                              }
+                              className="w-12 h-8 p-1"
+                            />
+                            <Input
+                              value={styles.backgroundColor}
+                              onChange={(e) =>
+                                handleStyleChange(
+                                  "backgroundColor",
+                                  e.target.value
+                                )
+                              }
+                              className="flex-1"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <Label htmlFor="accentColor">
+                            Couleur d&apos;Accent
+                          </Label>
+                          <div className="flex gap-2">
+                            <Input
+                              id="accentColor"
+                              type="color"
+                              value={styles.accentColor}
+                              onChange={(e) =>
+                                handleStyleChange("accentColor", e.target.value)
+                              }
+                              className="w-12 h-8 p-1"
+                            />
+                            <Input
+                              value={styles.accentColor}
+                              onChange={(e) =>
+                                handleStyleChange("accentColor", e.target.value)
+                              }
+                              className="flex-1"
+                            />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+
+              <TabsContent
+                value="layout"
+                className="flex-1 min-h-0 mt-0 overflow-hidden"
+              >
+                <ScrollArea className="h-full">
+                  <div className="p-4 space-y-4">
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base font-semibold flex items-center gap-2">
+                          📝 Typographie
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <Label htmlFor="titleFont">Police du Titre</Label>
+                          <Select
+                            value={styles.titleFont}
+                            onValueChange={(value) =>
+                              handleStyleChange("titleFont", value)
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {FONT_OPTIONS.map((font) => (
+                                <SelectItem key={font.value} value={font.value}>
+                                  {font.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="bodyFont">Police du Corps</Label>
+                          <Select
+                            value={styles.bodyFont}
+                            onValueChange={(value) =>
+                              handleStyleChange("bodyFont", value)
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {FONT_OPTIONS.map((font) => (
+                                <SelectItem key={font.value} value={font.value}>
+                                  {font.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="titleSize">
+                            Taille du Titre (px)
+                          </Label>
+                          <Input
+                            id="titleSize"
+                            type="number"
+                            value={styles.titleSize}
+                            onChange={(e) =>
+                              handleStyleChange(
+                                "titleSize",
+                                parseInt(e.target.value)
                               )
                             }
-                            onSerializedChange={(value) =>
-                              setStyles((prev) => ({
-                                ...prev,
-                                welcomeMessageState: value,
-                              }))
-                            }
+                            min="16"
+                            max="48"
                           />
                         </div>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Utilisez {"{{ recipientName }}"} pour le nom du
-                          destinataire
+                        <div>
+                          <Label htmlFor="bodySize">Taille du Corps (px)</Label>
+                          <Input
+                            id="bodySize"
+                            type="number"
+                            value={styles.bodySize}
+                            onChange={(e) =>
+                              handleStyleChange(
+                                "bodySize",
+                                parseInt(e.target.value)
+                              )
+                            }
+                            min="10"
+                            max="20"
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base font-semibold flex items-center gap-2">
+                          📏 Espacements
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <Label htmlFor="borderRadius">
+                            Rayon des Bordures (px)
+                          </Label>
+                          <Input
+                            id="borderRadius"
+                            type="number"
+                            value={styles.borderRadius}
+                            onChange={(e) =>
+                              handleStyleChange(
+                                "borderRadius",
+                                parseInt(e.target.value)
+                              )
+                            }
+                            min="0"
+                            max="30"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="padding">
+                            Espacement Interne (px)
+                          </Label>
+                          <Input
+                            id="padding"
+                            type="number"
+                            value={styles.padding}
+                            onChange={(e) =>
+                              handleStyleChange(
+                                "padding",
+                                parseInt(e.target.value)
+                              )
+                            }
+                            min="10"
+                            max="50"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="margin">Marge Externe (px)</Label>
+                          <Input
+                            id="margin"
+                            type="number"
+                            value={styles.margin}
+                            onChange={(e) =>
+                              handleStyleChange(
+                                "margin",
+                                parseInt(e.target.value)
+                              )
+                            }
+                            min="0"
+                            max="30"
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+
+              <TabsContent
+                value="images"
+                className="flex-1 min-h-0 mt-0 overflow-hidden"
+              >
+                <ScrollArea className="h-full">
+                  <div className="p-4 space-y-4">
+                    <ImageUpload
+                      label="Logo du Restaurant"
+                      currentImage={styles.logoUrl}
+                      onImageUpload={(url) => handleStyleChange("logoUrl", url)}
+                    />
+
+                    <ImageUpload
+                      label="Image de Fond"
+                      currentImage={styles.backgroundImage}
+                      onImageUpload={(url) =>
+                        handleStyleChange("backgroundImage", url)
+                      }
+                    />
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+
+              <TabsContent
+                value="preview"
+                className="flex-1 min-h-0 mt-0 overflow-hidden"
+              >
+                <ScrollArea className="h-full">
+                  <div className="p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h3 className="text-lg font-semibold">
+                          👁️ Prévisualisation en temps réel
+                        </h3>
+                        <p className="text-sm text-gray-500">
+                          Aperçu de votre template PDF
                         </p>
                       </div>
-                      <div>
-                        <Label>Message de Validité</Label>
-                        <div className="border rounded">
-                          <ShadcnEditor
-                            editorSerializedState={
-                              styles.validityMessageState ||
-                              plainToSerialized(
-                                styles.validityMessage.replace(/<[^>]+>/g, "")
-                              )
-                            }
-                            onSerializedChange={(value) =>
-                              setStyles((prev) => ({
-                                ...prev,
-                                validityMessageState: value,
-                              }))
-                            }
-                          />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-sm">
-                        Informations de Contact
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div>
-                        <Label>Titre du Pied de Page</Label>
-                        <div className="border rounded">
-                          <ShadcnEditor
-                            editorSerializedState={
-                              styles.footerTitleState ||
-                              plainToSerialized(styles.footerTitle)
-                            }
-                            onSerializedChange={(value) =>
-                              setStyles((prev) => ({
-                                ...prev,
-                                footerTitleState: value,
-                              }))
-                            }
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <Label>Informations de Contact</Label>
-                        <div className="border rounded">
-                          <ShadcnEditor
-                            editorSerializedState={
-                              styles.contactInfoState ||
-                              plainToSerialized(styles.contactInfo)
-                            }
-                            onSerializedChange={(value) =>
-                              setStyles((prev) => ({
-                                ...prev,
-                                contactInfoState: value,
-                              }))
-                            }
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <Label>Horaires d'Ouverture</Label>
-                        <div className="border rounded">
-                          <ShadcnEditor
-                            editorSerializedState={
-                              styles.openingHoursState ||
-                              plainToSerialized(styles.openingHours)
-                            }
-                            onSerializedChange={(value) =>
-                              setStyles((prev) => ({
-                                ...prev,
-                                openingHoursState: value,
-                              }))
-                            }
-                          />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-sm">Icône Cadeau</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-4 gap-2">
-                        {GIFT_ICONS.map((icon) => (
-                          <Button
-                            key={icon}
-                            variant={
-                              styles.giftIcon === icon ? "default" : "outline"
-                            }
-                            size="sm"
-                            onClick={() => handleStyleChange("giftIcon", icon)}
-                            className="text-lg"
-                          >
-                            {icon}
-                          </Button>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-
-                <TabsContent value="colors" className="space-y-4">
-                  <ColorPresets
-                    onPresetSelect={(preset) => {
-                      setStyles((prev) => ({
-                        ...prev,
-                        ...preset,
-                      }));
-                    }}
-                  />
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-sm">
-                        Palette de Couleurs
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div>
-                        <Label htmlFor="primaryColor">Couleur Principale</Label>
-                        <div className="flex gap-2">
-                          <Input
-                            id="primaryColor"
-                            type="color"
-                            value={styles.primaryColor}
-                            onChange={(e) =>
-                              handleStyleChange("primaryColor", e.target.value)
-                            }
-                            className="w-12 h-8 p-1"
-                          />
-                          <Input
-                            value={styles.primaryColor}
-                            onChange={(e) =>
-                              handleStyleChange("primaryColor", e.target.value)
-                            }
-                            className="flex-1"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <Label htmlFor="secondaryColor">
-                          Couleur Secondaire
-                        </Label>
-                        <div className="flex gap-2">
-                          <Input
-                            id="secondaryColor"
-                            type="color"
-                            value={styles.secondaryColor}
-                            onChange={(e) =>
-                              handleStyleChange(
-                                "secondaryColor",
-                                e.target.value
-                              )
-                            }
-                            className="w-12 h-8 p-1"
-                          />
-                          <Input
-                            value={styles.secondaryColor}
-                            onChange={(e) =>
-                              handleStyleChange(
-                                "secondaryColor",
-                                e.target.value
-                              )
-                            }
-                            className="flex-1"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <Label htmlFor="backgroundColor">Couleur de Fond</Label>
-                        <div className="flex gap-2">
-                          <Input
-                            id="backgroundColor"
-                            type="color"
-                            value={styles.backgroundColor}
-                            onChange={(e) =>
-                              handleStyleChange(
-                                "backgroundColor",
-                                e.target.value
-                              )
-                            }
-                            className="w-12 h-8 p-1"
-                          />
-                          <Input
-                            value={styles.backgroundColor}
-                            onChange={(e) =>
-                              handleStyleChange(
-                                "backgroundColor",
-                                e.target.value
-                              )
-                            }
-                            className="flex-1"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <Label htmlFor="accentColor">Couleur d'Accent</Label>
-                        <div className="flex gap-2">
-                          <Input
-                            id="accentColor"
-                            type="color"
-                            value={styles.accentColor}
-                            onChange={(e) =>
-                              handleStyleChange("accentColor", e.target.value)
-                            }
-                            className="w-12 h-8 p-1"
-                          />
-                          <Input
-                            value={styles.accentColor}
-                            onChange={(e) =>
-                              handleStyleChange("accentColor", e.target.value)
-                            }
-                            className="flex-1"
-                          />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-
-                <TabsContent value="layout" className="space-y-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-sm">Typographie</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div>
-                        <Label htmlFor="titleFont">Police du Titre</Label>
-                        <Select
-                          value={styles.titleFont}
-                          onValueChange={(value) =>
-                            handleStyleChange("titleFont", value)
+                      <div className="flex items-center gap-2">
+                        <label className="text-sm text-gray-600">Zoom</label>
+                        <select
+                          className="h-9 rounded border px-3 text-sm bg-white"
+                          value={previewScale}
+                          onChange={(e) =>
+                            setPreviewScale(parseFloat(e.target.value))
                           }
                         >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {FONT_OPTIONS.map((font) => (
-                              <SelectItem key={font.value} value={font.value}>
-                                {font.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                          <option value={0.5}>50%</option>
+                          <option value={0.6}>60%</option>
+                          <option value={0.7}>70%</option>
+                          <option value={0.8}>80%</option>
+                          <option value={0.9}>90%</option>
+                          <option value={1}>100%</option>
+                        </select>
                       </div>
-                      <div>
-                        <Label htmlFor="bodyFont">Police du Corps</Label>
-                        <Select
-                          value={styles.bodyFont}
-                          onValueChange={(value) =>
-                            handleStyleChange("bodyFont", value)
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {FONT_OPTIONS.map((font) => (
-                              <SelectItem key={font.value} value={font.value}>
-                                {font.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label htmlFor="titleSize">Taille du Titre (px)</Label>
-                        <Input
-                          id="titleSize"
-                          type="number"
-                          value={styles.titleSize}
-                          onChange={(e) =>
-                            handleStyleChange(
-                              "titleSize",
-                              parseInt(e.target.value)
-                            )
-                          }
-                          min="16"
-                          max="48"
+                    </div>
+                    <div className="flex justify-center bg-gray-100 p-8 rounded-lg">
+                      <div
+                        className="bg-white rounded shadow-lg inline-block origin-top-left"
+                        style={{
+                          transform: `scale(${previewScale})`,
+                          transformOrigin: "top center",
+                        }}
+                      >
+                        <iframe
+                          srcDoc={generatePreviewHTML()}
+                          className="w-[720px] h-[980px] border-0 rounded"
+                          title="Prévisualisation Template"
                         />
                       </div>
-                      <div>
-                        <Label htmlFor="bodySize">Taille du Corps (px)</Label>
-                        <Input
-                          id="bodySize"
-                          type="number"
-                          value={styles.bodySize}
-                          onChange={(e) =>
-                            handleStyleChange(
-                              "bodySize",
-                              parseInt(e.target.value)
-                            )
-                          }
-                          min="10"
-                          max="20"
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-sm">Espacement</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div>
-                        <Label htmlFor="borderRadius">
-                          Rayon des Bordures (px)
-                        </Label>
-                        <Input
-                          id="borderRadius"
-                          type="number"
-                          value={styles.borderRadius}
-                          onChange={(e) =>
-                            handleStyleChange(
-                              "borderRadius",
-                              parseInt(e.target.value)
-                            )
-                          }
-                          min="0"
-                          max="30"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="padding">Espacement Interne (px)</Label>
-                        <Input
-                          id="padding"
-                          type="number"
-                          value={styles.padding}
-                          onChange={(e) =>
-                            handleStyleChange(
-                              "padding",
-                              parseInt(e.target.value)
-                            )
-                          }
-                          min="10"
-                          max="50"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="margin">Marge Externe (px)</Label>
-                        <Input
-                          id="margin"
-                          type="number"
-                          value={styles.margin}
-                          onChange={(e) =>
-                            handleStyleChange(
-                              "margin",
-                              parseInt(e.target.value)
-                            )
-                          }
-                          min="0"
-                          max="30"
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-
-                <TabsContent value="images" className="space-y-4">
-                  <ImageUpload
-                    label="Logo du Restaurant"
-                    currentImage={styles.logoUrl}
-                    onImageUpload={(url) => handleStyleChange("logoUrl", url)}
-                  />
-
-                  <ImageUpload
-                    label="Image de Fond"
-                    currentImage={styles.backgroundImage}
-                    onImageUpload={(url) =>
-                      handleStyleChange("backgroundImage", url)
-                    }
-                  />
-                </TabsContent>
-              </div>
+                    </div>
+                  </div>
+                </ScrollArea>
+              </TabsContent>
             </Tabs>
-          </div>
-
-          {/* Prévisualisation */}
-          <div className="flex-1 min-w-0 p-2 md:p-4">
-            <div className="h-full border rounded-lg overflow-auto bg-gray-50 p-2 md:p-4">
-              <div className="flex items-center justify-end gap-2 mb-2">
-                <label className="text-xs text-gray-600">Zoom</label>
-                <select
-                  className="h-8 rounded border px-2 text-sm bg-white"
-                  value={previewScale}
-                  onChange={(e) => setPreviewScale(parseFloat(e.target.value))}
-                >
-                  <option value={0.7}>70%</option>
-                  <option value={0.8}>80%</option>
-                  <option value={0.9}>90%</option>
-                  <option value={1}>100%</option>
-                </select>
-              </div>
-              <div
-                className="bg-white rounded shadow-sm inline-block origin-top-left"
-                style={{
-                  transform: `scale(${previewScale})`,
-                  transformOrigin: "top left",
-                }}
-              >
-                <iframe
-                  srcDoc={generatePreviewHTML()}
-                  className="w-[720px] h-[980px] border-0"
-                  title="Prévisualisation Template"
-                />
-              </div>
-            </div>
           </div>
         </div>
       </div>

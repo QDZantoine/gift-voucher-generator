@@ -25,12 +25,13 @@ export default function EditMenuTypePage() {
             description: data.description || "",
             amount: data.amount,
             isActive: data.isActive,
+            templateId: data.templateId || undefined,
           });
         } else {
           toast.error("Type de menu non trouvé");
           router.push("/dashboard/menu-types");
         }
-      } catch (error) {
+      } catch (_error) {
         toast.error("Erreur lors du chargement du type de menu");
         router.push("/dashboard/menu-types");
       } finally {

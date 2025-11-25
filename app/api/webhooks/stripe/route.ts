@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
-import { prisma } from "@/lib/prisma";
+import { getPrismaClient } from "@/lib/prisma";
 import { generateGiftCardCode } from "@/lib/utils/code-generator";
 import {
   sendEmailWithRetry,
   generateGiftCardEmailHTML,
-  generatePurchaseConfirmationEmailHTML,
   EmailData,
 } from "@/lib/email";
 import { generateGiftCardPDF } from "@/lib/pdf-generator";
@@ -45,7 +44,6 @@ export async function POST(request: NextRequest) {
         menuType,
         numberOfPeople,
         recipientName,
-        recipientEmail,
         purchaserName,
         purchaserEmail,
         amount,
@@ -55,7 +53,7 @@ export async function POST(request: NextRequest) {
       const code = await generateGiftCardCode();
 
       // Trouver le MenuType correspondant
-      const db = (prisma as any).$client || (prisma as any).$base || prisma;
+      const db = getPrismaClient();
       const menuTypeData = await db.menuType.findUnique({
         where: { name: menuType },
       });
@@ -70,16 +68,16 @@ export async function POST(request: NextRequest) {
       expiryDate.setFullYear(expiryDate.getFullYear() + 1);
 
       // Créer le bon cadeau avec la relation MenuType
+      // Utiliser le templateId du MenuType si disponible, sinon celui des metadata
       const giftCard = await db.giftCard.create({
         data: {
           code,
           productType: menuType, // Gardé pour rétrocompatibilité
           menuTypeId: menuTypeData?.id || null, // Nouvelle relation
           numberOfPeople: parseInt(numberOfPeople),
-          recipientName,
-          recipientEmail,
-          purchaserName,
-          purchaserEmail,
+          recipientName: recipientName || "Destinataire",
+          purchaserName: purchaserName || "Acheteur en ligne",
+          purchaserEmail: purchaserEmail || session.customer_email || "",
           amount: parseFloat(amount),
           purchaseDate: new Date(),
           expiryDate,
@@ -87,7 +85,7 @@ export async function POST(request: NextRequest) {
           createdOnline: true,
           stripePaymentId: session.payment_intent as string,
           customMessage: metadata.customMessage || null,
-          templateId: metadata.templateId || null,
+          templateId: menuTypeData?.templateId || metadata.templateId || null, // Priorité au template du MenuType
         },
       });
 
@@ -104,6 +102,8 @@ export async function POST(request: NextRequest) {
           amount: giftCard.amount,
           expiryDate: giftCard.expiryDate.toISOString(),
           purchaseDate: giftCard.purchaseDate.toISOString(),
+          customMessage: giftCard.customMessage || undefined,
+          templateId: giftCard.templateId || undefined, // Utiliser le template du MenuType
         });
 
         // Générer le HTML de l'email
@@ -118,12 +118,13 @@ export async function POST(request: NextRequest) {
         });
 
         // Préparer les données d'email avec bonnes pratiques
+        // Envoyer uniquement à l'acheteur
         const emailData: EmailData = {
-          to: giftCard.recipientEmail,
+          to: giftCard.purchaserEmail,
           subject: `🎁 Votre bon cadeau Restaurant Influences - ${giftCard.code}`,
           html: emailHTML,
           text: `Bonjour ${
-            giftCard.recipientName
+            giftCard.purchaserName
           },\n\nVotre bon cadeau Restaurant Influences est prêt !\n\nCode: ${
             giftCard.code
           }\nMontant: ${giftCard.amount.toFixed(2)} €\nMenu: ${
@@ -151,80 +152,27 @@ export async function POST(request: NextRequest) {
           },
         };
 
-        // Envoyer l'email au destinataire avec retry logic
-        const recipientEmailResult = await sendEmailWithRetry(emailData, 3);
+        // Envoyer l'email à l'acheteur avec retry logic
+        const emailResult = await sendEmailWithRetry(emailData, 3);
 
         let emailSent = false;
-        if (!recipientEmailResult.success) {
+        if (!emailResult.success) {
           console.error(
-            "Échec de l'envoi d'email au destinataire via webhook:",
-            recipientEmailResult.error
+            "Échec de l'envoi d'email à l'acheteur via webhook:",
+            emailResult.error
           );
           // Ne pas faire échouer le webhook pour un problème d'email
           // L'email pourra être renvoyé manuellement depuis le dashboard
         } else {
           emailSent = true;
-          console.log(`✅ Email envoyé au destinataire via webhook pour ${giftCard.code}`, {
-            emailId: recipientEmailResult.emailId,
-            retryCount: recipientEmailResult.retryCount,
+          console.log(`✅ Email envoyé à l'acheteur via webhook pour ${giftCard.code}`, {
+            emailId: emailResult.emailId,
+            retryCount: emailResult.retryCount,
           });
-        }
-
-        // Envoyer l'email de confirmation à l'acheteur (si différent du destinataire)
-        const purchaserEmailToSend = purchaserEmail || recipientEmail;
-        if (purchaserEmailToSend && purchaserEmailToSend !== recipientEmail) {
-          console.log("📧 Envoi de l'email de confirmation à l'acheteur via webhook...");
-          const confirmationHTML = generatePurchaseConfirmationEmailHTML({
-            purchaserName: purchaserName || "Acheteur",
-            recipientName: giftCard.recipientName,
-            recipientEmail: giftCard.recipientEmail,
-            code: giftCard.code,
-            productType: giftCard.productType,
-            numberOfPeople: giftCard.numberOfPeople,
-            amount: giftCard.amount,
-            expiryDate: giftCard.expiryDate.toISOString(),
-            purchaseDate: giftCard.purchaseDate.toISOString(),
-            customMessage: giftCard.customMessage || undefined,
-          });
-
-          const confirmationEmailData: EmailData = {
-            to: purchaserEmailToSend,
-            subject: `✅ Confirmation de votre achat - Bon cadeau Restaurant Influences`,
-            html: confirmationHTML,
-            text: `Bonjour ${purchaserName || "Acheteur"},\n\nMerci pour votre achat !\n\nVotre bon cadeau a été créé avec succès et envoyé à ${giftCard.recipientEmail}.\n\nCode: ${giftCard.code}\nMontant: ${giftCard.amount.toFixed(2)} €\nMenu: ${giftCard.productType}\nPersonnes: ${giftCard.numberOfPeople}\n\nRestaurant Influences\n19 Rue Vieille Boucherie, 64100 Bayonne\n05 59 01 75 04`,
-            tags: [
-              { name: "gift_card_code", value: giftCard.code },
-              { name: "product_type", value: giftCard.productType },
-              { name: "amount", value: giftCard.amount.toString() },
-              { name: "email_type", value: "purchase_confirmation" },
-              { name: "source", value: "stripe_webhook" },
-            ],
-            headers: {
-              "X-Gift-Card-ID": giftCard.id,
-              "X-Product-Type": giftCard.productType,
-              "X-Payment-ID": session.id,
-              "X-Email-Type": "purchase_confirmation",
-            },
-          };
-
-          const confirmationEmailResult = await sendEmailWithRetry(confirmationEmailData, 3);
-          if (!confirmationEmailResult.success) {
-            console.error(
-              "Échec de l'envoi d'email de confirmation via webhook:",
-              confirmationEmailResult.error
-            );
-          } else {
-            console.log(`✅ Email de confirmation envoyé à l'acheteur via webhook pour ${giftCard.code}`, {
-              emailId: confirmationEmailResult.emailId,
-              retryCount: confirmationEmailResult.retryCount,
-            });
-          }
-        } else {
-          console.log("ℹ️ L'acheteur et le destinataire sont les mêmes, pas d'email de confirmation séparé");
         }
 
         // Marquer l'email comme envoyé
-        await prisma.giftCard.update({
+        await db.giftCard.update({
           where: { id: giftCard.id },
           data: { emailSent },
         });

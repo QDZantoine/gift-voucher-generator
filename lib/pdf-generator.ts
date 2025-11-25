@@ -16,44 +16,61 @@ export interface GiftCardData {
   purchaseDate: string;
   customMessage?: string;
   templateId?: string;
+  // Template personnalisé (utilisé si fourni, sinon recherche par ID/productType)
+  template?: {
+    html: string;
+    css: string;
+  };
 }
 
 export async function generateGiftCardPDF(
   giftCard: GiftCardData
 ): Promise<Buffer> {
-  // Trouver le template approprié
-  let template: PDFTemplate | undefined;
+  let templateHtml: string;
+  let templateCss: string;
 
-  if (giftCard.templateId) {
-    // Utiliser un template spécifique
-    const defaultTemplates = DEFAULT_TEMPLATES.map((t, index) => ({
-      ...t,
-      id: `template-${index}`,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }));
-    template = defaultTemplates.find((t) => t.id === giftCard.templateId);
+  // Si un template personnalisé est fourni, l'utiliser directement
+  if (giftCard.template) {
+    templateHtml = giftCard.template.html;
+    templateCss = giftCard.template.css;
   } else {
-    // Trouver le template par type de produit
-    const defaultTemplates = DEFAULT_TEMPLATES.map((t, index) => ({
-      ...t,
-      id: `template-${index}`,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }));
-    template = defaultTemplates.find(
-      (t) => t.productType === giftCard.productType && t.isActive
-    );
-  }
+    // Sinon, trouver le template approprié dans les templates par défaut
+    let template: PDFTemplate | undefined;
 
-  // Fallback vers le template par défaut
-  if (!template) {
-    template = DEFAULT_TEMPLATES.map((t, index) => ({
-      ...t,
-      id: `template-${index}`,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }))[0];
+    if (giftCard.templateId) {
+      // Utiliser un template spécifique
+      const defaultTemplates = DEFAULT_TEMPLATES.map((t, index) => ({
+        ...t,
+        id: `template-${index}`,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }));
+      template = defaultTemplates.find((t) => t.id === giftCard.templateId);
+    } else {
+      // Trouver le template par type de produit
+      const defaultTemplates = DEFAULT_TEMPLATES.map((t, index) => ({
+        ...t,
+        id: `template-${index}`,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }));
+      template = defaultTemplates.find(
+        (t) => t.productType === giftCard.productType && t.isActive
+      );
+    }
+
+    // Fallback vers le template par défaut
+    if (!template) {
+      template = DEFAULT_TEMPLATES.map((t, index) => ({
+        ...t,
+        id: `template-${index}`,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }))[0];
+    }
+
+    templateHtml = template.html;
+    templateCss = template.css;
   }
 
   // Préparer les données pour le template
@@ -69,7 +86,7 @@ export async function generateGiftCardPDF(
   };
 
   // Remplacer les variables dans le template
-  const processedHtml = replaceTemplateVariables(template.html, templateData);
+  const processedHtml = replaceTemplateVariables(templateHtml, templateData);
 
   const html = `
     <!DOCTYPE html>
@@ -78,7 +95,7 @@ export async function generateGiftCardPDF(
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Bon Cadeau Restaurant Influences</title>
-        <style>${template.css}</style>
+        <style>${templateCss}</style>
     </head>
     <body>${processedHtml}</body>
     </html>

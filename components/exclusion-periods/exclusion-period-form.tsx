@@ -29,9 +29,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 interface ExclusionPeriodFormProps {
   initialData?: ExclusionPeriodFormValues & { id: string };
@@ -90,7 +89,7 @@ export function ExclusionPeriodForm({ initialData }: ExclusionPeriodFormProps) {
           toast.error(error.error || "Erreur lors de l'enregistrement");
         }
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error("Erreur lors de l'enregistrement");
     } finally {
       setIsSubmitting(false);

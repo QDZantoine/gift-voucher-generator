@@ -85,7 +85,7 @@ export default function PDFPreviewPage() {
       } else {
         toast.error("Erreur lors de la génération du PDF");
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error("Erreur lors de la génération du PDF");
     } finally {
       setLoading(false);

@@ -11,6 +11,7 @@ import {
   FORMAT_ELEMENT_COMMAND,
   $getSelection,
   $isRangeSelection,
+  $insertNodes,
 } from "lexical";
 import { $setBlocksType, $patchStyleText } from "@lexical/selection";
 import { $createHeadingNode } from "@lexical/rich-text";
@@ -94,7 +95,8 @@ function Toolbar() {
       editor.update(() => {
         const selection = $getSelection();
         if ($isRangeSelection(selection)) {
-          $setBlocksType(selection, () => $createHeadingNode("h" + level));
+          const tag = level === 1 ? "h1" : level === 2 ? "h2" : "h3";
+          $setBlocksType(selection, () => $createHeadingNode(tag));
         }
       });
     },
@@ -105,7 +107,7 @@ function Toolbar() {
     editor.update(() => {
       const selection = $getSelection();
       if ($isRangeSelection(selection)) {
-        $setBlocksType(selection, () => $createHeadingNode("paragraph" as any));
+        $setBlocksType(selection, () => $createHeadingNode("h1"));
       }
     });
   }, [editor]);
@@ -132,7 +134,9 @@ function Toolbar() {
         "text/html"
       );
       const nodes = $generateNodesFromDOM(editor, dom);
-      nodes.forEach((n) => editor.insertNodes([n] as any));
+      if (nodes && nodes.length > 0) {
+        $insertNodes(nodes);
+      }
     });
   }, [editor]);
 

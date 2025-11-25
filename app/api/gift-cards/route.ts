@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { prisma, prismaBase } from "@/lib/prisma";
+import { prismaBase } from "@/lib/prisma";
 import { createGiftCardSchema } from "@/lib/validations/gift-card";
 import { generateUniqueCode } from "@/lib/utils/code-generator";
 import { headers } from "next/headers";
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
       OR?: Array<{
         code?: { contains: string; mode: "insensitive" };
         recipientName?: { contains: string; mode: "insensitive" };
-        recipientEmail?: { contains: string; mode: "insensitive" };
+        purchaserName?: { contains: string; mode: "insensitive" };
         purchaserEmail?: { contains: string; mode: "insensitive" };
       }>;
       productType?: string;
@@ -55,7 +55,8 @@ export async function GET(request: NextRequest) {
       const searchLower = search.toLowerCase();
       where.OR = [
         { code: { contains: searchLower, mode: "insensitive" } },
-        { recipientEmail: { contains: searchLower, mode: "insensitive" } },
+        { recipientName: { contains: searchLower, mode: "insensitive" } },
+        { purchaserName: { contains: searchLower, mode: "insensitive" } },
         { purchaserEmail: { contains: searchLower, mode: "insensitive" } },
       ];
     }
@@ -165,7 +166,6 @@ export async function POST(request: NextRequest) {
         menuTypeId: menuType.id, // Nouvelle relation
         numberOfPeople: validatedData.numberOfPeople,
         recipientName: validatedData.recipientName,
-        recipientEmail: validatedData.recipientEmail,
         purchaserName: validatedData.purchaserName,
         purchaserEmail: validatedData.purchaserEmail,
         amount: validatedData.amount,

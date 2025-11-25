@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getPrismaClient } from "@/lib/prisma";
 
 // GET /api/menu-types/active - Liste tous les types de menus actifs
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const db = (prisma as any).$client || (prisma as any).$base || prisma;
+    const db = getPrismaClient();
     const menuTypes = await db.menuType.findMany({
       where: { isActive: true },
       orderBy: { name: "asc" },

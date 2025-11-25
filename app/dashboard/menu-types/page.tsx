@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -24,7 +24,7 @@ export default function MenuTypesPage() {
   const [isActive, setIsActive] = useState<string>("all");
   const [error, setError] = useState<string | null>(null);
 
-  const fetchMenuTypes = async () => {
+  const fetchMenuTypes = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({
@@ -55,11 +55,11 @@ export default function MenuTypesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, search, isActive]);
 
   useEffect(() => {
     fetchMenuTypes();
-  }, [page, search, isActive]);
+  }, [fetchMenuTypes]);
 
   return (
     <div className="space-y-6">

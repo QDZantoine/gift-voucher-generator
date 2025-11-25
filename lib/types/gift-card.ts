@@ -5,7 +5,6 @@ export interface CreateGiftCardInput {
   productType: string;
   numberOfPeople: number;
   recipientName: string;
-  recipientEmail: string;
   purchaserName: string;
   purchaserEmail: string;
   amount: number;

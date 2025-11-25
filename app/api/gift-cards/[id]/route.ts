@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { getPrismaClient } from "@/lib/prisma";
 import { headers } from "next/headers";
 
 // GET /api/gift-cards/[id] - Récupérer un bon cadeau par ID
@@ -18,7 +18,7 @@ export async function GET(
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    const db = (prisma as any).$client || (prisma as any).$base || prisma;
+    const db = getPrismaClient();
     const giftCard = await db.giftCard.findUnique({
       where: { id: params.id },
       include: {
@@ -75,7 +75,7 @@ export async function PATCH(
     const body = await request.json();
     const { isUsed } = body;
 
-    const db = (prisma as any).$client || (prisma as any).$base || prisma;
+    const db = getPrismaClient();
 
     // Vérifier que le bon existe
     const existingGiftCard = await db.giftCard.findUnique({
@@ -153,7 +153,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    const db = (prisma as any).$client || (prisma as any).$base || prisma;
+    const db = getPrismaClient();
     await db.giftCard.delete({
       where: { id: params.id },
     });

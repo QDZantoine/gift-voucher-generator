@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { Mail, MailCheck, MailX } from "lucide-react";
+import { MailCheck, MailX } from "lucide-react";
 
 interface EmailStatusBadgeProps {
   emailSent: boolean;
@@ -8,7 +8,6 @@ interface EmailStatusBadgeProps {
 
 export function EmailStatusBadge({
   emailSent,
-  recipientEmail,
 }: EmailStatusBadgeProps) {
   if (emailSent) {
     return (

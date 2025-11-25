@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { getPrismaClient } from "@/lib/prisma";
 import { headers } from "next/headers";
 
 // GET /api/gift-cards/stats - Récupérer les statistiques des bons cadeaux
@@ -15,15 +15,16 @@ export async function GET() {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
+    const db = getPrismaClient();
     const now = new Date();
 
     // Récupérer les statistiques
     const [total, active, used, expired] = await Promise.all([
       // Total des bons
-      prisma.giftCard.count(),
+      db.giftCard.count(),
 
       // Bons actifs (non utilisés et non expirés)
-      prisma.giftCard.count({
+      db.giftCard.count({
         where: {
           isUsed: false,
           expiryDate: { gte: now },
@@ -31,12 +32,12 @@ export async function GET() {
       }),
 
       // Bons utilisés
-      prisma.giftCard.count({
+      db.giftCard.count({
         where: { isUsed: true },
       }),
 
       // Bons expirés (non utilisés mais date dépassée)
-      prisma.giftCard.count({
+      db.giftCard.count({
         where: {
           isUsed: false,
           expiryDate: { lt: now },

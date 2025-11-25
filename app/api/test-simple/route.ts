@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("❌ Erreur dans le test simple:", error);
     return NextResponse.json(
-      { error: "Erreur dans le test simple", details: error.message },
+      { error: "Erreur dans le test simple", details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }

@@ -5,6 +5,7 @@ export const MenuTypeSchema = z.object({
   description: z.string().optional(),
   amount: z.number().positive("Le montant doit être positif").min(0.01, "Le montant doit être supérieur à 0"),
   isActive: z.boolean().default(true),
+  templateId: z.string().optional(),
 });
 
 export type MenuTypeFormValues = z.infer<typeof MenuTypeSchema>;
@@ -15,6 +16,7 @@ export interface MenuType {
   description?: string | null;
   amount: number;
   isActive: boolean;
+  templateId?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getPrismaClient } from "@/lib/prisma";
 import { UpdateExclusionPeriodSchema } from "@/lib/validations/exclusion-period";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
@@ -20,7 +20,8 @@ export async function GET(
 
     const { id } = await params;
 
-    const period = await prisma.exclusionPeriod.findUnique({
+    const db = getPrismaClient();
+    const period = await db.exclusionPeriod.findUnique({
       where: { id },
     });
 
@@ -52,6 +53,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
+    const db = getPrismaClient();
     const { id } = await params;
     const body = await request.json();
 
@@ -59,7 +61,7 @@ export async function PATCH(
     const validatedData = UpdateExclusionPeriodSchema.parse(body);
 
     // Vérifier que la période existe
-    const existingPeriod = await prisma.exclusionPeriod.findUnique({
+    const existingPeriod = await db.exclusionPeriod.findUnique({
       where: { id },
     });
 
@@ -79,7 +81,7 @@ export async function PATCH(
       : existingPeriod.endDate;
 
     // Vérifier les chevauchements (exclure la période actuelle)
-    const overlapping = await prisma.exclusionPeriod.findMany({
+    const overlapping = await db.exclusionPeriod.findMany({
       where: {
         AND: [
           { id: { not: id } },
@@ -108,7 +110,7 @@ export async function PATCH(
     }
 
     // Mettre à jour la période
-    const updatedPeriod = await prisma.exclusionPeriod.update({
+    const updatedPeriod = await db.exclusionPeriod.update({
       where: { id },
       data: {
         ...(validatedData.name && { name: validatedData.name }),
@@ -159,10 +161,11 @@ export async function DELETE(
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
+    const db = getPrismaClient();
     const { id } = await params;
 
     // Vérifier que la période existe
-    const existingPeriod = await prisma.exclusionPeriod.findUnique({
+    const existingPeriod = await db.exclusionPeriod.findUnique({
       where: { id },
     });
 
@@ -174,7 +177,7 @@ export async function DELETE(
     }
 
     // Supprimer la période
-    await prisma.exclusionPeriod.delete({
+    await db.exclusionPeriod.delete({
       where: { id },
     });
 

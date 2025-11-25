@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getPrismaClient } from "@/lib/prisma";
 import { generateGiftCardCode } from "@/lib/utils/code-generator";
 import {
   sendEmailWithRetry,
   generateGiftCardEmailHTML,
-  generatePurchaseConfirmationEmailHTML,
   EmailData,
 } from "@/lib/email";
 import { generateGiftCardPDF } from "@/lib/pdf-generator";
@@ -20,7 +19,6 @@ export async function POST(request: NextRequest) {
       productType,
       numberOfPeople,
       recipientName,
-      recipientEmail,
       purchaserName,
       purchaserEmail,
       amount,
@@ -32,7 +30,8 @@ export async function POST(request: NextRequest) {
       !productType ||
       !numberOfPeople ||
       !recipientName ||
-      !recipientEmail ||
+      !purchaserName ||
+      !purchaserEmail ||
       !amount
     ) {
       console.log("❌ Données manquantes");
@@ -45,7 +44,7 @@ export async function POST(request: NextRequest) {
     console.log("✅ Validation des données OK");
 
     // Vérifier si un bon cadeau avec ce payment_id existe déjà
-    const db = (prisma as any).$client || (prisma as any).$base || prisma;
+    const db = getPrismaClient();
     if (stripePaymentId) {
       const existingGiftCard = await db.giftCard.findFirst({
         where: { stripePaymentId },
@@ -93,10 +92,9 @@ export async function POST(request: NextRequest) {
         productType, // Gardé pour rétrocompatibilité
         menuTypeId: menuType.id, // Nouvelle relation
         numberOfPeople: parseInt(numberOfPeople),
-        recipientName,
-        recipientEmail,
+        recipientName: recipientName || "Destinataire",
         purchaserName: purchaserName || "Acheteur en ligne",
-        purchaserEmail: purchaserEmail || recipientEmail,
+        purchaserEmail: purchaserEmail,
         amount: parseFloat(amount),
         purchaseDate: new Date(),
         expiryDate,
@@ -104,7 +102,7 @@ export async function POST(request: NextRequest) {
         createdOnline: true,
         stripePaymentId: stripePaymentId || null,
         customMessage: body.customMessage || null,
-        templateId: body.templateId || null,
+        templateId: menuType.templateId || null, // Utiliser le template du MenuType
       },
     });
 
@@ -122,7 +120,8 @@ export async function POST(request: NextRequest) {
         amount: giftCard.amount,
         expiryDate: giftCard.expiryDate.toISOString(),
         purchaseDate: giftCard.purchaseDate.toISOString(),
-        customMessage: giftCard.customMessage,
+        customMessage: giftCard.customMessage || undefined,
+        templateId: giftCard.templateId || undefined, // Utiliser le template du MenuType
       });
 
       console.log("📧 Génération du HTML de l'email...");
@@ -139,12 +138,13 @@ export async function POST(request: NextRequest) {
 
       console.log("📧 Préparation des données d'email...");
       // Préparer les données d'email avec bonnes pratiques
+      // Envoyer uniquement à l'acheteur
       const emailData: EmailData = {
-        to: giftCard.recipientEmail,
+        to: giftCard.purchaserEmail,
         subject: `🎁 Votre bon cadeau Restaurant Influences - ${giftCard.code}`,
         html: emailHTML,
         text: `Bonjour ${
-          giftCard.recipientName
+          giftCard.purchaserName
         },\n\nVotre bon cadeau Restaurant Influences est prêt !\n\nCode: ${
           giftCard.code
         }\nMontant: ${giftCard.amount.toFixed(2)} €\nMenu: ${
@@ -171,72 +171,22 @@ export async function POST(request: NextRequest) {
         },
       };
 
-      console.log("📧 Envoi de l'email au destinataire...");
-      // Envoyer l'email au destinataire avec retry logic
-      const recipientEmailResult = await sendEmailWithRetry(emailData, 3);
+      console.log("📧 Envoi de l'email à l'acheteur...");
+      // Envoyer l'email à l'acheteur avec retry logic
+      const emailResult = await sendEmailWithRetry(emailData, 3);
 
       let emailSent = false;
-      if (recipientEmailResult.success) {
+      if (emailResult.success) {
         emailSent = true;
         console.log(
-          `✅ Email envoyé au destinataire pour le bon cadeau ${giftCard.code}`,
+          `✅ Email envoyé à l'acheteur pour le bon cadeau ${giftCard.code}`,
           {
-            emailId: recipientEmailResult.emailId,
-            retryCount: recipientEmailResult.retryCount,
+            emailId: emailResult.emailId,
+            retryCount: emailResult.retryCount,
           }
         );
       } else {
-        console.error("❌ Échec de l'envoi d'email au destinataire:", recipientEmailResult.error);
-      }
-
-      // Envoyer l'email de confirmation à l'acheteur (toujours, même si c'est la même personne)
-      const purchaserEmailToSend = purchaserEmail || recipientEmail;
-      if (purchaserEmailToSend) {
-        console.log("📧 Envoi de l'email de confirmation à l'acheteur...");
-        const confirmationHTML = generatePurchaseConfirmationEmailHTML({
-          purchaserName: purchaserName || "Acheteur",
-          recipientName: giftCard.recipientName,
-          recipientEmail: giftCard.recipientEmail,
-          code: giftCard.code,
-          productType: giftCard.productType,
-          numberOfPeople: giftCard.numberOfPeople,
-          amount: giftCard.amount,
-          expiryDate: giftCard.expiryDate.toISOString(),
-          purchaseDate: giftCard.purchaseDate.toISOString(),
-          customMessage: giftCard.customMessage || undefined,
-        });
-
-        const confirmationEmailData: EmailData = {
-          to: purchaserEmailToSend,
-          subject: `✅ Confirmation de votre achat - Bon cadeau Restaurant Influences`,
-          html: confirmationHTML,
-          text: `Bonjour ${purchaserName || "Acheteur"},\n\nMerci pour votre achat !\n\nVotre bon cadeau a été créé avec succès et envoyé au destinataire.\n\nCode: ${giftCard.code}\nMontant: ${giftCard.amount.toFixed(2)} €\nMenu: ${giftCard.productType}\nPersonnes: ${giftCard.numberOfPeople}\n\nRestaurant Influences\n19 Rue Vieille Boucherie, 64100 Bayonne\n05 59 01 75 04`,
-          tags: [
-            { name: "gift_card_code", value: giftCard.code },
-            { name: "product_type", value: giftCard.productType },
-            { name: "amount", value: giftCard.amount.toString() },
-            { name: "email_type", value: "purchase_confirmation" },
-          ],
-          headers: {
-            "X-Gift-Card-ID": giftCard.id,
-            "X-Product-Type": giftCard.productType,
-            "X-Payment-ID": stripePaymentId || "unknown",
-            "X-Email-Type": "purchase_confirmation",
-          },
-        };
-
-        const confirmationEmailResult = await sendEmailWithRetry(confirmationEmailData, 3);
-        if (confirmationEmailResult.success) {
-          console.log(
-            `✅ Email de confirmation envoyé à l'acheteur pour le bon cadeau ${giftCard.code}`,
-            {
-              emailId: confirmationEmailResult.emailId,
-              retryCount: confirmationEmailResult.retryCount,
-            }
-          );
-        } else {
-          console.error("❌ Échec de l'envoi d'email de confirmation:", confirmationEmailResult.error);
-        }
+        console.error("❌ Échec de l'envoi d'email à l'acheteur:", emailResult.error);
       }
 
       // Marquer l'email comme envoyé ou non

@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useCallback, useState } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Upload, X, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -105,11 +105,13 @@ export function ImageUpload({
       <CardContent className="space-y-3">
         {currentImage ? (
           <div className="space-y-3">
-            <div className="relative">
-              <img
+            <div className="relative w-full h-32 rounded-lg border overflow-hidden">
+              <Image
                 src={currentImage}
                 alt="Image téléchargée"
-                className="w-full h-32 object-cover rounded-lg border"
+                fill
+                className="object-cover"
+                unoptimized
               />
               <Button
                 variant="destructive"
@@ -121,7 +123,7 @@ export function ImageUpload({
               </Button>
             </div>
             <div className="text-xs text-gray-500">
-              Cliquez sur "Changer" pour remplacer cette image
+              Cliquez sur &quot;Changer&quot; pour remplacer cette image
             </div>
           </div>
         ) : (
@@ -140,7 +142,7 @@ export function ImageUpload({
               Glissez-déposez une image ici ou cliquez pour sélectionner
             </p>
             <p className="text-xs text-gray-500 mb-3">
-              PNG, JPG, GIF jusqu'à 5MB
+              PNG, JPG, GIF jusqu&apos;à 5MB
             </p>
             <Input
               type="file"
@@ -165,4 +167,3 @@ export function ImageUpload({
     </Card>
   );
 }
-

@@ -30,22 +30,34 @@ function createPrismaBaseClient() {
   
   // Si l'URL utilise Accelerate, utiliser DIRECT_URL si disponible
   // DIRECT_URL est la variable d'environnement standard pour la connexion directe avec Accelerate
-  if (databaseUrl.startsWith("prisma+postgres://")) {
+  if (databaseUrl.startsWith("prisma+postgres://") || databaseUrl.startsWith("prisma://")) {
     const directUrl = process.env.DIRECT_URL;
     if (directUrl) {
-      // Utiliser DIRECT_URL pour la connexion directe
+      // Convertir postgres:// en postgresql:// si nécessaire (Prisma nécessite postgresql://)
+      const normalizedUrl = directUrl.replace(/^postgres:\/\//, "postgresql://");
+      console.log("🔧 [prismaBase] Utilisation de DIRECT_URL:", normalizedUrl.substring(0, 30) + "...");
+      // Utiliser l'option datasources pour forcer l'URL directe
       return new PrismaClient({
         datasources: {
           db: {
-            url: directUrl,
+            url: normalizedUrl,
           },
         },
       });
     } else {
-      // Si DIRECT_URL n'est pas disponible, utiliser la même URL mais sans extension Accelerate
-      // Note: Cela peut ne pas fonctionner si le client Prisma est configuré pour Accelerate uniquement
-      console.warn("⚠️  DIRECT_URL n'est pas défini. prismaBase utilisera DATABASE_URL sans extension Accelerate.");
-      return new PrismaClient();
+      // Si DIRECT_URL n'est pas disponible, convertir l'URL Accelerate en URL PostgreSQL directe
+      // Format Accelerate: prisma+postgres://user:password@host:port/database?params
+      // Format PostgreSQL: postgresql://user:password@host:port/database?params
+      const postgresUrl = databaseUrl.replace(/^prisma\+?/, "");
+      console.warn("⚠️  DIRECT_URL n'est pas défini. Conversion de l'URL Accelerate en URL PostgreSQL directe.");
+      // Utiliser l'option datasources pour forcer l'URL directe
+      return new PrismaClient({
+        datasources: {
+          db: {
+            url: postgresUrl,
+          },
+        },
+      });
     }
   }
   
@@ -54,6 +66,16 @@ function createPrismaBaseClient() {
 }
 
 export const prismaBase = globalForPrisma.prismaBase ?? createPrismaBaseClient();
+
+// Helper pour obtenir le client Prisma approprié de manière type-safe
+export function getPrismaClient(): PrismaClient {
+  // Si prisma a des extensions, utiliser prismaBase à la place
+  const client = prisma as unknown as { $extends?: unknown };
+  if (client.$extends !== undefined) {
+    return prismaBase;
+  }
+  return prisma as unknown as PrismaClient;
+}
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
