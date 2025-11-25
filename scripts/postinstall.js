@@ -5,7 +5,7 @@
  * Utilise --no-engine en production (Vercel) pour accélérer les builds
  */
 
-const { execSync } = require('child_process');
+import { execSync } from 'child_process';
 
 const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
 const useNoEngine = isProduction || process.env.PRISMA_GENERATE_NO_ENGINE === 'true';

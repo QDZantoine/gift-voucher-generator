@@ -4,8 +4,12 @@
 
 import fs from "fs";
 import path from "path";
-const crypto = require('crypto');
+import crypto from "crypto";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 const envPath = path.join(__dirname, '..', '.env');
 
 // Vérifier si le fichier .env existe déjà

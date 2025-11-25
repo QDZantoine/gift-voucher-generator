@@ -105,7 +105,8 @@ async function exportFromSQLite() {
     // Vérifier que better-sqlite3 est installé
     let Database;
     try {
-      Database = require('better-sqlite3');
+      const betterSqlite3 = await import('better-sqlite3');
+      Database = betterSqlite3.default;
     } catch (e) {
       console.error('❌ Erreur: better-sqlite3 n\'est pas installé');
       console.error('   Installez-le avec: npm install better-sqlite3');
