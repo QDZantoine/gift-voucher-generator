@@ -69,10 +69,10 @@ prisma/*.db
 prisma/*.db-journal
 prisma/backups
 
-# Scripts de développement
+# Scripts de développement (garder postinstall.js pour le build)
 scripts/*.js
-scripts/*.ts
 !scripts/postinstall.js
+scripts/*.ts
 
 # TypeScript
 *.tsbuildinfo

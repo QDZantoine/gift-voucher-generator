@@ -9,7 +9,17 @@
 FROM node:22.12.0 AS deps
 WORKDIR /app
 
+# Copier les fichiers nécessaires pour le postinstall (scripts et prisma)
 COPY package.json package-lock.json* ./
+COPY scripts/ ./scripts/
+COPY prisma/ ./prisma/
+
+# Définir les variables d'environnement pour le postinstall
+ENV NODE_ENV=production
+ENV CI=true
+ENV DOCKER_BUILD=true
+ENV PRISMA_GENERATE_NO_ENGINE=true
+
 RUN npm ci
 
 # ======================================================
