@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import dynamic from "next/dynamic";
 import {
   Card,
   CardContent,
@@ -22,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Edit, Eye, Save, X, Play, Palette } from "lucide-react";
+import { Plus, Edit, Eye, Save, X, Play, Palette, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   PDFTemplate,
@@ -30,8 +31,23 @@ import {
   replaceTemplateVariables,
   GiftCardTemplateData,
 } from "@/lib/pdf-templates";
-import { VisualTemplateEditor } from "@/components/pdf-template/VisualTemplateEditor";
 import { MenuType } from "@/lib/types/menu-type";
+
+// Dynamic import du VisualTemplateEditor (composant lourd avec Lexical)
+const VisualTemplateEditor = dynamic(
+  () =>
+    import("@/components/pdf-template/VisualTemplateEditor").then(
+      (mod) => mod.VisualTemplateEditor
+    ),
+  {
+    loading: () => (
+      <div className="flex items-center justify-center p-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    ),
+    ssr: false,
+  }
+);
 
 export default function PDFTemplatesPage() {
   const [templates, setTemplates] = useState<PDFTemplate[]>([]);
@@ -92,14 +108,44 @@ export default function PDFTemplatesPage() {
   }, [previewData.productType, previewData.numberOfPeople, menuTypes]);
 
   useEffect(() => {
-    // Charger les templates (pour l'instant, utiliser les templates par défaut)
-    const defaultTemplates = DEFAULT_TEMPLATES.map((template, index) => ({
-      ...template,
-      id: `template-${index}`,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }));
-    setTemplates(defaultTemplates);
+    // Charger les templates depuis la base de données
+    const fetchTemplates = async () => {
+      try {
+        const response = await fetch("/api/pdf-templates");
+        if (response.ok) {
+          const dbTemplates = await response.json();
+          
+          // Ajouter aussi les templates par défaut s'il n'y a pas encore de templates en BDD
+          if (dbTemplates.length === 0) {
+            const defaultTemplates = DEFAULT_TEMPLATES.map((template, index) => ({
+              ...template,
+              id: `template-${index}`,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            }));
+            setTemplates(defaultTemplates);
+          } else {
+            setTemplates(dbTemplates);
+          }
+        } else {
+          toast.error("Erreur lors du chargement des templates");
+        }
+      } catch (error) {
+        console.error("Error loading templates:", error);
+        toast.error("Erreur lors du chargement des templates");
+        
+        // Fallback aux templates par défaut en cas d'erreur
+        const defaultTemplates = DEFAULT_TEMPLATES.map((template, index) => ({
+          ...template,
+          id: `template-${index}`,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }));
+        setTemplates(defaultTemplates);
+      }
+    };
+
+    fetchTemplates();
   }, []);
 
   const handleEditTemplate = (template: PDFTemplate) => {
@@ -112,19 +158,66 @@ export default function PDFTemplatesPage() {
     setIsVisualEditing(true);
   };
 
-  const handleSaveTemplate = () => {
+  const handleSaveTemplate = async () => {
     if (!selectedTemplate) return;
 
-    setTemplates((prev) =>
-      prev.map((t) =>
-        t.id === selectedTemplate.id
-          ? { ...selectedTemplate, updatedAt: new Date() }
-          : t
-      )
-    );
+    try {
+      // Vérifier si c'est un template par défaut (ID commence par "template-")
+      const isDefaultTemplate = selectedTemplate.id.startsWith("template-");
+      
+      if (isDefaultTemplate) {
+        // Créer un nouveau template en BDD basé sur le template par défaut
+        const response = await fetch("/api/pdf-templates", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: selectedTemplate.name,
+            description: selectedTemplate.description,
+            productType: selectedTemplate.productType,
+            html: selectedTemplate.html,
+            css: selectedTemplate.css,
+            isActive: selectedTemplate.isActive,
+          }),
+        });
 
-    setIsEditing(false);
-    toast.success("Template sauvegardé avec succès");
+        if (!response.ok) {
+          throw new Error("Failed to create template");
+        }
+
+        const newTemplate = await response.json();
+        setTemplates((prev) => [...prev, newTemplate]);
+        toast.success("Nouveau template créé avec succès");
+      } else {
+        // Mettre à jour le template existant
+        const response = await fetch(`/api/pdf-templates/${selectedTemplate.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: selectedTemplate.name,
+            description: selectedTemplate.description,
+            productType: selectedTemplate.productType,
+            html: selectedTemplate.html,
+            css: selectedTemplate.css,
+            isActive: selectedTemplate.isActive,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to update template");
+        }
+
+        const updatedTemplate = await response.json();
+        setTemplates((prev) =>
+          prev.map((t) => (t.id === updatedTemplate.id ? updatedTemplate : t))
+        );
+        toast.success("Template mis à jour avec succès");
+      }
+
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Error saving template:", error);
+      toast.error("Erreur lors de la sauvegarde du template");
+    }
   };
 
   const handlePreviewTemplate = async (template: PDFTemplate) => {
@@ -275,17 +368,11 @@ export default function PDFTemplatesPage() {
                       <Badge variant="outline">{template.productType}</Badge>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Label className="text-sm font-medium">Variables:</Label>
-                      <span className="text-sm text-muted-foreground">
-                        {template.variables.length} variable(s) configurée(s)
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
                       <Label className="text-sm font-medium">
                         Dernière modification:
                       </Label>
                       <span className="text-sm text-muted-foreground">
-                        {template.updatedAt.toLocaleDateString("fr-FR")}
+                        {new Date(template.updatedAt).toLocaleDateString("fr-FR")}
                       </span>
                     </div>
                   </div>
@@ -532,16 +619,64 @@ export default function PDFTemplatesPage() {
       {selectedTemplate && isVisualEditing && (
         <VisualTemplateEditor
           template={selectedTemplate}
-          onSave={(updatedTemplate) => {
-            setTemplates((prev) =>
-              prev.map((t) =>
-                t.id === updatedTemplate.id
-                  ? { ...updatedTemplate, updatedAt: new Date() }
-                  : t
-              )
-            );
-            setIsVisualEditing(false);
-            toast.success("Template sauvegardé avec succès");
+          onSave={async (updatedTemplate) => {
+            try {
+              // Vérifier si c'est un template par défaut (ID commence par "template-")
+              const isDefaultTemplate = updatedTemplate.id.startsWith("template-");
+              
+              if (isDefaultTemplate) {
+                // Créer un nouveau template en BDD
+                const response = await fetch("/api/pdf-templates", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    name: updatedTemplate.name,
+                    description: updatedTemplate.description,
+                    productType: updatedTemplate.productType,
+                    html: updatedTemplate.html,
+                    css: updatedTemplate.css,
+                    isActive: updatedTemplate.isActive,
+                  }),
+                });
+
+                if (!response.ok) {
+                  throw new Error("Failed to create template");
+                }
+
+                const newTemplate = await response.json();
+                setTemplates((prev) => [...prev, newTemplate]);
+                toast.success("Nouveau template créé avec succès");
+              } else {
+                // Mettre à jour le template existant
+                const response = await fetch(`/api/pdf-templates/${updatedTemplate.id}`, {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    name: updatedTemplate.name,
+                    description: updatedTemplate.description,
+                    productType: updatedTemplate.productType,
+                    html: updatedTemplate.html,
+                    css: updatedTemplate.css,
+                    isActive: updatedTemplate.isActive,
+                  }),
+                });
+
+                if (!response.ok) {
+                  throw new Error("Failed to update template");
+                }
+
+                const savedTemplate = await response.json();
+                setTemplates((prev) =>
+                  prev.map((t) => (t.id === savedTemplate.id ? savedTemplate : t))
+                );
+                toast.success("Template mis à jour avec succès");
+              }
+
+              setIsVisualEditing(false);
+            } catch (error) {
+              console.error("Error saving template:", error);
+              toast.error("Erreur lors de la sauvegarde du template");
+            }
           }}
           onCancel={() => setIsVisualEditing(false)}
           previewData={previewData}

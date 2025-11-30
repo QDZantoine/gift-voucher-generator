@@ -5,10 +5,10 @@ export interface PDFTemplate {
   description: string;
   html: string;
   css: string;
-  variables: TemplateVariable[];
+  variables?: TemplateVariable[]; // Optionnel pour les templates en BDD
   isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: Date | string;
+  updatedAt: Date | string;
 }
 
 export interface TemplateVariable {

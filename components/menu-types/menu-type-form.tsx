@@ -4,10 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import {
-  MenuTypeSchema,
-  MenuTypeFormValues,
-} from "@/lib/types/menu-type";
+import { MenuTypeSchema, MenuTypeFormValues } from "@/lib/types/menu-type";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -44,13 +41,49 @@ export function MenuTypeForm({ initialData }: MenuTypeFormProps) {
 
   // Charger les templates disponibles
   useEffect(() => {
-    const defaultTemplates = DEFAULT_TEMPLATES.map((template, index) => ({
-      ...template,
-      id: `template-${index}`,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }));
-    setTemplates(defaultTemplates.filter((t) => t.isActive));
+    const fetchTemplates = async () => {
+      try {
+        const response = await fetch("/api/pdf-templates");
+        if (response.ok) {
+          const dbTemplates: PDFTemplate[] = await response.json();
+
+          // Si aucun template en BDD, utiliser les templates par défaut
+          if (dbTemplates.length === 0) {
+            const defaultTemplates = DEFAULT_TEMPLATES.map(
+              (template, index) => ({
+                ...template,
+                id: `template-${index}`,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              })
+            );
+            setTemplates(defaultTemplates.filter((t) => t.isActive));
+          } else {
+            setTemplates(dbTemplates.filter((t) => t.isActive));
+          }
+        } else {
+          // En cas d'erreur, fallback aux templates par défaut
+          const defaultTemplates = DEFAULT_TEMPLATES.map((template, index) => ({
+            ...template,
+            id: `template-${index}`,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          }));
+          setTemplates(defaultTemplates.filter((t) => t.isActive));
+        }
+      } catch {
+        // En cas d'erreur, fallback aux templates par défaut
+        const defaultTemplates = DEFAULT_TEMPLATES.map((template, index) => ({
+          ...template,
+          id: `template-${index}`,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }));
+        setTemplates(defaultTemplates.filter((t) => t.isActive));
+      }
+    };
+
+    fetchTemplates();
   }, []);
 
   const form = useForm<MenuTypeFormValues>({
@@ -120,7 +153,8 @@ export function MenuTypeForm({ initialData }: MenuTypeFormProps) {
                     />
                   </FormControl>
                   <FormDescription>
-                    Le nom du menu tel qu&apos;il apparaîtra dans les bons cadeaux
+                    Le nom du menu tel qu&apos;il apparaîtra dans les bons
+                    cadeaux
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -161,7 +195,9 @@ export function MenuTypeForm({ initialData }: MenuTypeFormProps) {
                       min="0.01"
                       placeholder="45.00"
                       {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      onChange={(e) =>
+                        field.onChange(parseFloat(e.target.value) || 0)
+                      }
                       value={field.value || ""}
                     />
                   </FormControl>
@@ -201,10 +237,14 @@ export function MenuTypeForm({ initialData }: MenuTypeFormProps) {
               name="templateId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Template PDF pour l&apos;envoi d&apos;email</FormLabel>
+                  <FormLabel>
+                    Template PDF pour l&apos;envoi d&apos;email
+                  </FormLabel>
                   <Select
                     value={field.value || "none"}
-                    onValueChange={(value) => field.onChange(value === "none" ? undefined : value)}
+                    onValueChange={(value) =>
+                      field.onChange(value === "none" ? undefined : value)
+                    }
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -212,16 +252,20 @@ export function MenuTypeForm({ initialData }: MenuTypeFormProps) {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="none">Aucun template (par défaut)</SelectItem>
+                      <SelectItem value="none">
+                        Aucun template (par défaut)
+                      </SelectItem>
                       {templates.map((template) => (
                         <SelectItem key={template.id} value={template.id}>
-                          {template.name} {template.productType && `(${template.productType})`}
+                          {template.name}{" "}
+                          {template.productType && `(${template.productType})`}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                   <FormDescription>
-                    Sélectionnez un template PDF à utiliser lors de l&apos;envoi d&apos;email pour les bons cadeaux de ce type de menu
+                    Sélectionnez un template PDF à utiliser lors de l&apos;envoi
+                    d&apos;email pour les bons cadeaux de ce type de menu
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -250,4 +294,3 @@ export function MenuTypeForm({ initialData }: MenuTypeFormProps) {
     </Card>
   );
 }
-

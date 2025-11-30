@@ -63,10 +63,6 @@ export async function sendEmailWithRetry(
     !process.env.RESEND_API_KEY ||
     process.env.RESEND_API_KEY.startsWith("re_test_")
   ) {
-    console.log("🧪 Mode test - Simulation de l'envoi d'email");
-    console.log("📧 Destinataire:", emailData.to);
-    console.log("📋 Sujet:", emailData.subject);
-    console.log("📎 Pièces jointes:", emailData.attachments?.length || 0);
 
     // Simuler un délai d'envoi
     await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -94,8 +90,12 @@ export async function sendEmailWithRetry(
   }
 
   // Configuration de l'email avec bonnes pratiques
+  // Utiliser EMAIL_FROM de .env (important pour la production avec domaine vérifié)
+  const defaultFrom = process.env.EMAIL_FROM || "Restaurant Influences <onboarding@resend.dev>";
+  const defaultReplyTo = process.env.EMAIL_REPLY_TO || "contact@restaurant-influences.fr";
+  
   const emailOptions = {
-    from: "Restaurant Influences <onboarding@resend.dev>",
+    from: defaultFrom,
     to: recipients,
     subject: emailData.subject,
     html: emailData.html,
@@ -113,7 +113,7 @@ export async function sendEmailWithRetry(
       "X-Entity-Ref-ID": `gift-card-${Date.now()}`,
       ...emailData.headers,
     },
-    replyTo: emailData.replyTo || "contact@restaurant-influences.fr",
+    replyTo: emailData.replyTo || defaultReplyTo,
   };
 
   // Retry logic avec gestion d'erreurs spécifiques

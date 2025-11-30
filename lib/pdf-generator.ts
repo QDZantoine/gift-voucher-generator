@@ -5,6 +5,7 @@ import {
   replaceTemplateVariables,
   GiftCardTemplateData,
 } from "./pdf-templates";
+import { getPrismaClient } from "./prisma";
 
 export interface GiftCardData {
   code: string;
@@ -34,32 +35,57 @@ export async function generateGiftCardPDF(
     templateHtml = giftCard.template.html;
     templateCss = giftCard.template.css;
   } else {
-    // Sinon, trouver le template approprié dans les templates par défaut
+    // Sinon, trouver le template approprié
     let template: PDFTemplate | undefined;
 
+    // 1. Chercher d'abord dans la base de données
     if (giftCard.templateId) {
-      // Utiliser un template spécifique
-      const defaultTemplates = DEFAULT_TEMPLATES.map((t, index) => ({
-        ...t,
-        id: `template-${index}`,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }));
-      template = defaultTemplates.find((t) => t.id === giftCard.templateId);
-    } else {
-      // Trouver le template par type de produit
-      const defaultTemplates = DEFAULT_TEMPLATES.map((t, index) => ({
-        ...t,
-        id: `template-${index}`,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }));
-      template = defaultTemplates.find(
-        (t) => t.productType === giftCard.productType && t.isActive
-      );
+      try {
+        const db = getPrismaClient();
+        const dbTemplate = await db.pDFTemplate.findUnique({
+          where: { id: giftCard.templateId },
+        });
+
+        if (dbTemplate) {
+          template = {
+            id: dbTemplate.id,
+            name: dbTemplate.name,
+            description: dbTemplate.description || "",
+            productType: dbTemplate.productType,
+            html: dbTemplate.html,
+            css: dbTemplate.css,
+            variables: [], // Pas utilisé pour l'instant
+            isActive: dbTemplate.isActive,
+            createdAt: dbTemplate.createdAt,
+            updatedAt: dbTemplate.updatedAt,
+          };
+        }
+      } catch (error) {
+        console.error("Error fetching template from database:", error);
+      }
     }
 
-    // Fallback vers le template par défaut
+    // 2. Si pas trouvé en BDD, chercher dans les templates par défaut
+    if (!template) {
+      const defaultTemplates = DEFAULT_TEMPLATES.map((t, index) => ({
+        ...t,
+        id: `template-${index}`,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }));
+
+      if (giftCard.templateId) {
+        // Chercher par ID dans les templates par défaut
+        template = defaultTemplates.find((t) => t.id === giftCard.templateId);
+      } else {
+        // Chercher par type de produit
+        template = defaultTemplates.find(
+          (t) => t.productType === giftCard.productType && t.isActive
+        );
+      }
+    }
+
+    // 3. Fallback vers le premier template par défaut
     if (!template) {
       template = DEFAULT_TEMPLATES.map((t, index) => ({
         ...t,

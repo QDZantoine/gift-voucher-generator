@@ -27,6 +27,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { MenuType } from "@/lib/types/menu-type";
+import { PublicHeader } from "@/components/public/header";
+import { PublicFooter } from "@/components/public/footer";
 
 const orderSchema = z.object({
   menuType: z.string().min(1, "Le type de menu est requis"),
@@ -117,109 +119,189 @@ export default function HomePage() {
   };
 
   return (
-    <div className="relative min-h-[calc(100vh-12rem)] flex items-center justify-center py-8 px-4 sm:py-12 sm:px-6 lg:px-8 overflow-hidden">
-      {/* Background Overlay */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#F8F7F2] to-[#F0EFE8]"></div>
-      </div>
+    <div className="min-h-screen flex flex-col">
+      <PublicHeader />
 
-      <div className="relative z-10 w-full max-w-4xl">
-        <div className="text-center mb-8 sm:mb-12">
-          {/* <Gift className="h-16 w-16 sm:h-20 sm:w-20 mx-auto text-[#1A2B4B] mb-4 sm:mb-6" /> */}
-          {/* <h1 className="font-playfair-display text-3xl sm:text-4xl lg:text-5xl font-bold text-[#1A2B4B] mb-3 sm:mb-4">
-            Offrez Influences
-          </h1> */}
-          <div className="flex justify-center items-center mb-8">
-            <Image
-              src="/images/logo-bleu.svg"
-              alt="Influences Logo"
-              width={600}
-              height={600}
-            />
-          </div>
-          <p className="font-lato text-lg sm:text-xl text-[#1A2B4B]/80 max-w-2xl mx-auto px-4 sm:px-0">
-            Offrez un moment de partage à vos proches ! En quelques clics,
-            recevez directement par mail, nos bons cadeaux.
-          </p>
+      <main className="flex-1 relative flex items-center justify-center py-8 px-4 sm:py-12 sm:px-6 lg:px-8 overflow-hidden">
+        {/* Background Overlay */}
+        <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-[#F8F7F2] to-[#F0EFE8]"></div>
         </div>
 
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="space-y-6 sm:space-y-8"
-          >
-            <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl">
-              <CardHeader className="pb-4 sm:pb-6">
-                <CardTitle className="font-playfair-display text-xl sm:text-2xl font-semibold text-[#1A2B4B]">
-                  Choisissez votre formule
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4 sm:space-y-6">
-                <div className="grid gap-4 sm:gap-6 sm:grid-cols-2">
+        <div className="relative z-10 w-full max-w-4xl">
+          <div className="text-center mb-8 sm:mb-12">
+            {/* <Gift className="h-16 w-16 sm:h-20 sm:w-20 mx-auto text-[#1A2B4B] mb-4 sm:mb-6" /> */}
+            {/* <h1 className="font-playfair-display text-3xl sm:text-4xl lg:text-5xl font-bold text-[#1A2B4B] mb-3 sm:mb-4">
+            Offrez Influences
+          </h1> */}
+            <div className="flex justify-center items-center mb-8">
+              <Image
+                src="/images/logo-bleu.svg"
+                alt="Influences Logo - Restaurant Gastronomique Bayonne"
+                width={600}
+                height={200}
+                priority
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 600px"
+              />
+            </div>
+            <p className="font-lato text-lg sm:text-xl text-[#1A2B4B]/80 max-w-2xl mx-auto px-4 sm:px-0">
+              Offrez un moment de partage à vos proches ! En quelques clics,
+              recevez directement par mail, nos bons cadeaux.
+            </p>
+          </div>
+
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="space-y-6 sm:space-y-8"
+            >
+              <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl">
+                <CardHeader className="pb-4 sm:pb-6">
+                  <CardTitle className="font-playfair-display text-xl sm:text-2xl font-semibold text-[#1A2B4B]">
+                    Choisissez votre formule
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4 sm:space-y-6">
+                  <div className="grid gap-4 sm:gap-6 sm:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name="menuType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="font-lato font-medium text-[#1A2B4B]">
+                            Type de menu *
+                          </FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            disabled={
+                              loadingMenuTypes || menuTypes.length === 0
+                            }
+                          >
+                            <FormControl>
+                              <SelectTrigger className="font-lato border-[#1A2B4B]/20 focus:border-[#1A2B4B] focus:ring-2 focus:ring-[#1A2B4B]/20 transition-colors">
+                                <SelectValue
+                                  placeholder={
+                                    loadingMenuTypes
+                                      ? "Chargement..."
+                                      : "Sélectionnez un menu"
+                                  }
+                                />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent className="font-lato">
+                              {loadingMenuTypes ? (
+                                <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                                  Chargement...
+                                </div>
+                              ) : menuTypes.length === 0 ? (
+                                <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                                  Aucun menu disponible
+                                </div>
+                              ) : (
+                                menuTypes.map((menuType) => (
+                                  <SelectItem
+                                    key={menuType.id}
+                                    value={menuType.name}
+                                  >
+                                    {menuType.name} -{" "}
+                                    {menuType.amount.toFixed(2)}€ / pers.
+                                  </SelectItem>
+                                ))
+                              )}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="numberOfPeople"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="font-lato font-medium text-[#1A2B4B]">
+                            Nombre de personnes *
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min="1"
+                              max="20"
+                              {...field}
+                              className="font-lato border-[#1A2B4B]/20 focus:border-[#1A2B4B] focus:ring-2 focus:ring-[#1A2B4B]/20 transition-colors"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="bg-[#1A2B4B]/5 rounded-lg p-4 sm:p-6 border border-[#1A2B4B]/10">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-0">
+                      <span className="font-lato text-base sm:text-lg font-medium text-[#1A2B4B]">
+                        Montant total :
+                      </span>
+                      <span className="font-playfair-display text-2xl sm:text-3xl lg:text-4xl font-bold text-[#1A2B4B]">
+                        {totalAmount.toFixed(2)} €
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl">
+                <CardHeader className="pb-4 sm:pb-6">
+                  <CardTitle className="font-playfair-display text-xl sm:text-2xl font-semibold text-[#1A2B4B]">
+                    Destinataire du bon cadeau
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4 sm:space-y-6">
                   <FormField
                     control={form.control}
-                    name="menuType"
+                    name="recipientName"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="font-lato font-medium text-[#1A2B4B]">
-                          Type de menu *
+                          Nom du destinataire *
                         </FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                          disabled={loadingMenuTypes || menuTypes.length === 0}
-                        >
-                          <FormControl>
-                            <SelectTrigger className="font-lato border-[#1A2B4B]/20 focus:border-[#1A2B4B] focus:ring-2 focus:ring-[#1A2B4B]/20 transition-colors">
-                              <SelectValue
-                                placeholder={
-                                  loadingMenuTypes
-                                    ? "Chargement..."
-                                    : "Sélectionnez un menu"
-                                }
-                              />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent className="font-lato">
-                            {loadingMenuTypes ? (
-                              <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                                Chargement...
-                              </div>
-                            ) : menuTypes.length === 0 ? (
-                              <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                                Aucun menu disponible
-                              </div>
-                            ) : (
-                              menuTypes.map((menuType) => (
-                                <SelectItem
-                                  key={menuType.id}
-                                  value={menuType.name}
-                                >
-                                  {menuType.name} - {menuType.amount.toFixed(2)}
-                                  € / pers.
-                                </SelectItem>
-                              ))
-                            )}
-                          </SelectContent>
-                        </Select>
+                        <FormControl>
+                          <Input
+                            placeholder="Jean Dupont"
+                            {...field}
+                            className="font-lato border-[#1A2B4B]/20 focus:border-[#1A2B4B] focus:ring-2 focus:ring-[#1A2B4B]/20 transition-colors"
+                          />
+                        </FormControl>
+                        <FormDescription className="font-lato text-[#1A2B4B]/70">
+                          Le nom qui apparaîtra sur le bon cadeau
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+                </CardContent>
+              </Card>
 
+              <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl">
+                <CardHeader className="pb-4 sm:pb-6">
+                  <CardTitle className="font-playfair-display text-xl sm:text-2xl font-semibold text-[#1A2B4B]">
+                    Vos informations
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4 sm:space-y-6">
                   <FormField
                     control={form.control}
-                    name="numberOfPeople"
+                    name="purchaserName"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="font-lato font-medium text-[#1A2B4B]">
-                          Nombre de personnes *
+                          Nom complet *
                         </FormLabel>
                         <FormControl>
                           <Input
-                            type="number"
-                            min="1"
-                            max="20"
+                            placeholder="Marie Martin"
                             {...field}
                             className="font-lato border-[#1A2B4B]/20 focus:border-[#1A2B4B] focus:ring-2 focus:ring-[#1A2B4B]/20 transition-colors"
                           />
@@ -228,163 +310,130 @@ export default function HomePage() {
                       </FormItem>
                     )}
                   />
-                </div>
 
-                <div className="bg-[#1A2B4B]/5 rounded-lg p-4 sm:p-6 border border-[#1A2B4B]/10">
-                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-0">
-                    <span className="font-lato text-base sm:text-lg font-medium text-[#1A2B4B]">
-                      Montant total :
-                    </span>
-                    <span className="font-playfair-display text-2xl sm:text-3xl lg:text-4xl font-bold text-[#1A2B4B]">
-                      {totalAmount.toFixed(2)} €
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                  <FormField
+                    control={form.control}
+                    name="purchaserEmail"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="font-lato font-medium text-[#1A2B4B]">
+                          Email *
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="email"
+                            placeholder="marie.martin@example.com"
+                            {...field}
+                            className="font-lato border-[#1A2B4B]/20 focus:border-[#1A2B4B] focus:ring-2 focus:ring-[#1A2B4B]/20 transition-colors"
+                          />
+                        </FormControl>
+                        <FormDescription className="font-lato text-[#1A2B4B]/70">
+                          Le bon cadeau avec le PDF sera envoyé à cette adresse
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-            <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl">
-              <CardHeader className="pb-4 sm:pb-6">
-                <CardTitle className="font-playfair-display text-xl sm:text-2xl font-semibold text-[#1A2B4B]">
-                  Destinataire du bon cadeau
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4 sm:space-y-6">
-                <FormField
-                  control={form.control}
-                  name="recipientName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="font-lato font-medium text-[#1A2B4B]">
-                        Nom du destinataire *
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Jean Dupont"
-                          {...field}
-                          className="font-lato border-[#1A2B4B]/20 focus:border-[#1A2B4B] focus:ring-2 focus:ring-[#1A2B4B]/20 transition-colors"
-                        />
-                      </FormControl>
-                      <FormDescription className="font-lato text-[#1A2B4B]/70">
-                        Le nom qui apparaîtra sur le bon cadeau
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
+                  <FormField
+                    control={form.control}
+                    name="customMessage"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="font-lato font-medium text-[#1A2B4B]">
+                          Message personnalisé
+                        </FormLabel>
+                        <FormControl>
+                          <textarea
+                            placeholder="Écrivez un message personnalisé qui apparaîtra sur le bon cadeau..."
+                            {...field}
+                            rows={4}
+                            className="font-lato w-full px-3 py-2 border border-[#1A2B4B]/20 rounded-md focus:border-[#1A2B4B] focus:ring-2 focus:ring-[#1A2B4B]/20 focus:outline-none transition-colors resize-none"
+                          />
+                        </FormControl>
+                        <FormDescription className="font-lato text-[#1A2B4B]/70">
+                          Ce message apparaîtra sur le bon cadeau PDF
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+
+              <div className="space-y-3 sm:space-y-4">
+                <Button
+                  type="submit"
+                  size="lg"
+                  className="w-full rounded-full font-lato text-base sm:text-lg py-4 sm:py-6 bg-transparent text-[#1A2B4B] border-2 border-[#1A2B4B] hover:bg-[#1A2B4B] hover:text-white focus:ring-2 focus:ring-[#1A2B4B]/20 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg hover:shadow-xl active:scale-[0.98]"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
+                      <span className="hidden sm:inline">Préparation...</span>
+                      <span className="sm:hidden">Préparation...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                      <span className="hidden sm:inline">
+                        Procéder au paiement ({totalAmount.toFixed(2)} €)
+                      </span>
+                      <span className="sm:hidden">
+                        Payer ({totalAmount.toFixed(2)} €)
+                      </span>
+                    </>
                   )}
-                />
-              </CardContent>
-            </Card>
+                </Button>
 
-            <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl">
-              <CardHeader className="pb-4 sm:pb-6">
-                <CardTitle className="font-playfair-display text-xl sm:text-2xl font-semibold text-[#1A2B4B]">
-                  Vos informations
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4 sm:space-y-6">
-                <FormField
-                  control={form.control}
-                  name="purchaserName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="font-lato font-medium text-[#1A2B4B]">
-                        Nom complet *
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Marie Martin"
-                          {...field}
-                          className="font-lato border-[#1A2B4B]/20 focus:border-[#1A2B4B] focus:ring-2 focus:ring-[#1A2B4B]/20 transition-colors"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <p className="text-center font-lato text-xs sm:text-sm text-[#1A2B4B]/70 px-4 sm:px-0">
+                  Paiement sécurisé par Stripe • Validité 1 an
+                </p>
+              </div>
+            </form>
+          </Form>
+        </div>
+      </main>
 
-                <FormField
-                  control={form.control}
-                  name="purchaserEmail"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="font-lato font-medium text-[#1A2B4B]">
-                        Email *
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          type="email"
-                          placeholder="marie.martin@example.com"
-                          {...field}
-                          className="font-lato border-[#1A2B4B]/20 focus:border-[#1A2B4B] focus:ring-2 focus:ring-[#1A2B4B]/20 transition-colors"
-                        />
-                      </FormControl>
-                      <FormDescription className="font-lato text-[#1A2B4B]/70">
-                        Le bon cadeau avec le PDF sera envoyé à cette adresse
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="customMessage"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="font-lato font-medium text-[#1A2B4B]">
-                        Message personnalisé
-                      </FormLabel>
-                      <FormControl>
-                        <textarea
-                          placeholder="Écrivez un message personnalisé qui apparaîtra sur le bon cadeau..."
-                          {...field}
-                          rows={4}
-                          className="font-lato w-full px-3 py-2 border border-[#1A2B4B]/20 rounded-md focus:border-[#1A2B4B] focus:ring-2 focus:ring-[#1A2B4B]/20 focus:outline-none transition-colors resize-none"
-                        />
-                      </FormControl>
-                      <FormDescription className="font-lato text-[#1A2B4B]/70">
-                        Ce message apparaîtra sur le bon cadeau PDF
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
-
-            <div className="space-y-3 sm:space-y-4">
-              <Button
-                type="submit"
-                size="lg"
-                className="w-full font-lato text-base sm:text-lg py-4 sm:py-6 bg-transparent text-[#1A2B4B] border-2 border-[#1A2B4B] hover:bg-[#1A2B4B] hover:text-white focus:ring-2 focus:ring-[#1A2B4B]/20 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg hover:shadow-xl active:scale-[0.98]"
-                disabled={loading}
+      {/* CTA Section - Découvrir le site */}
+      <section className="bg-gradient-to-r from-[#1A2B4B] to-[#0F1A2E] py-12 sm:py-16">
+        <div className="container mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center space-y-6">
+            <h2 className="font-playfair-display text-2xl sm:text-3xl lg:text-4xl font-bold text-white">
+              Découvrez notre univers culinaire
+            </h2>
+            <p className="font-lato text-base sm:text-lg text-white/80 max-w-2xl mx-auto">
+              Explorez notre carte, réservez votre table et plongez dans
+              l&apos;univers gastronomique du Restaurant Influences.
+            </p>
+            <div className="pt-4">
+              <a
+                href="https://restaurant-influences.fr/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-white text-[#1A2B4B] rounded-full font-lato text-base sm:text-lg font-semibold hover:bg-white/90 hover:scale-105 transition-all duration-300 shadow-xl hover:shadow-2xl"
               >
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
-                    <span className="hidden sm:inline">Préparation...</span>
-                    <span className="sm:hidden">Préparation...</span>
-                  </>
-                ) : (
-                  <>
-                    <CreditCard className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                    <span className="hidden sm:inline">
-                      Procéder au paiement ({totalAmount.toFixed(2)} €)
-                    </span>
-                    <span className="sm:hidden">
-                      Payer ({totalAmount.toFixed(2)} €)
-                    </span>
-                  </>
-                )}
-              </Button>
-
-              <p className="text-center font-lato text-xs sm:text-sm text-[#1A2B4B]/70 px-4 sm:px-0">
-                Paiement sécurisé par Stripe • Validité 1 an
-              </p>
+                Visiter notre site
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </a>
             </div>
-          </form>
-        </Form>
-      </div>
+          </div>
+        </div>
+      </section>
+
+      <PublicFooter />
     </div>
   );
 }

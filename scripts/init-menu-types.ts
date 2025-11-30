@@ -1,6 +1,6 @@
-import { PrismaClient } from "../lib/generated/prisma";
+import { getPrismaClient } from "../lib/prisma";
 
-const prisma = new PrismaClient();
+const prisma = getPrismaClient();
 
 const defaultMenuTypes = [
   {

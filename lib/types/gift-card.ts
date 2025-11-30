@@ -1,4 +1,4 @@
-import { GiftCard } from "../generated/prisma";
+import { GiftCard } from "../generated/prisma/client";
 
 // Type pour la création d'un bon cadeau
 export interface CreateGiftCardInput {

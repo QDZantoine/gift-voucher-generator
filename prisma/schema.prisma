@@ -2,13 +2,12 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
   output   = "../lib/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // BetterAuth Models
@@ -95,12 +94,14 @@ model GiftCard {
   customMessage   String? // Message personnalisé pour le bon cadeau
   templateId      String? // ID du template PDF utilisé
 
-  user     User?     @relation(fields: [createdBy], references: [id])
-  menuType MenuType? @relation(fields: [menuTypeId], references: [id], onDelete: SetNull)
+  user        User?        @relation(fields: [createdBy], references: [id])
+  menuType    MenuType?    @relation(fields: [menuTypeId], references: [id], onDelete: SetNull)
+  pdfTemplate PDFTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
 
   @@index([code])
   @@index([createdBy])
   @@index([menuTypeId])
+  @@index([templateId])
 }
 
 model ExclusionPeriod {
@@ -125,5 +126,26 @@ model MenuType {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  giftCards GiftCard[] // Relation avec les bons cadeaux
+  giftCards   GiftCard[] // Relation avec les bons cadeaux
+  pdfTemplate PDFTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+
+  @@index([templateId])
+}
+
+model PDFTemplate {
+  id          String   @id @default(cuid())
+  name        String // Nom du template
+  description String? // Description
+  productType String // Type de produit associé (Menu Influences, etc.)
+  html        String   @db.Text // HTML du template
+  css         String   @db.Text // CSS du template
+  isActive    Boolean  @default(true) // Si le template est actif
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  menuTypes MenuType[] // Relations avec les types de menu
+  giftCards GiftCard[] // Relations avec les bons cadeaux
+
+  @@index([productType])
+  @@index([isActive])
 }
