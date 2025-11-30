@@ -16,6 +16,7 @@ export function PublicFooter() {
                 width={180}
                 height={60}
                 loading="lazy"
+                unoptimized
                 className="h-16 sm:h-20 w-auto transition-opacity duration-300 group-hover:opacity-80"
               />
             </Link>

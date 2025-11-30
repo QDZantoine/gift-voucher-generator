@@ -141,6 +141,7 @@ export default function HomePage() {
                 width={600}
                 height={200}
                 priority
+                unoptimized
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 600px"
               />
             </div>

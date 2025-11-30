@@ -16,6 +16,7 @@ export function PublicHeader() {
                 width={200}
                 height={70}
                 priority
+                unoptimized
                 className="h-14 sm:h-20 w-auto transition-all duration-300 group-hover:scale-105"
               />
             </div>
