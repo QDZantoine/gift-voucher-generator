@@ -63,7 +63,6 @@ export async function sendEmailWithRetry(
     !process.env.RESEND_API_KEY ||
     process.env.RESEND_API_KEY.startsWith("re_test_")
   ) {
-
     // Simuler un délai d'envoi
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
@@ -91,9 +90,12 @@ export async function sendEmailWithRetry(
 
   // Configuration de l'email avec bonnes pratiques
   // Utiliser EMAIL_FROM de .env (important pour la production avec domaine vérifié)
-  const defaultFrom = process.env.EMAIL_FROM || "Restaurant Influences <onboarding@resend.dev>";
-  const defaultReplyTo = process.env.EMAIL_REPLY_TO || "contact@restaurant-influences.fr";
-  
+  const defaultFrom =
+    process.env.EMAIL_FROM ||
+    "Restaurant Influences <noreply@influences-bayonne.fr>";
+  const defaultReplyTo =
+    process.env.EMAIL_REPLY_TO || "contact@influences-bayonne.fr";
+
   const emailOptions = {
     from: defaultFrom,
     to: recipients,
