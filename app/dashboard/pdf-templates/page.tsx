@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import {
   Card,
@@ -114,15 +114,17 @@ export default function PDFTemplatesPage() {
         const response = await fetch("/api/pdf-templates");
         if (response.ok) {
           const dbTemplates = await response.json();
-          
+
           // Ajouter aussi les templates par défaut s'il n'y a pas encore de templates en BDD
           if (dbTemplates.length === 0) {
-            const defaultTemplates = DEFAULT_TEMPLATES.map((template, index) => ({
-              ...template,
-              id: `template-${index}`,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            }));
+            const defaultTemplates = DEFAULT_TEMPLATES.map(
+              (template, index) => ({
+                ...template,
+                id: `template-${index}`,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              })
+            );
             setTemplates(defaultTemplates);
           } else {
             setTemplates(dbTemplates);
@@ -133,7 +135,7 @@ export default function PDFTemplatesPage() {
       } catch (error) {
         console.error("Error loading templates:", error);
         toast.error("Erreur lors du chargement des templates");
-        
+
         // Fallback aux templates par défaut en cas d'erreur
         const defaultTemplates = DEFAULT_TEMPLATES.map((template, index) => ({
           ...template,
@@ -164,7 +166,7 @@ export default function PDFTemplatesPage() {
     try {
       // Vérifier si c'est un template par défaut (ID commence par "template-")
       const isDefaultTemplate = selectedTemplate.id.startsWith("template-");
-      
+
       if (isDefaultTemplate) {
         // Créer un nouveau template en BDD basé sur le template par défaut
         const response = await fetch("/api/pdf-templates", {
@@ -189,18 +191,21 @@ export default function PDFTemplatesPage() {
         toast.success("Nouveau template créé avec succès");
       } else {
         // Mettre à jour le template existant
-        const response = await fetch(`/api/pdf-templates/${selectedTemplate.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: selectedTemplate.name,
-            description: selectedTemplate.description,
-            productType: selectedTemplate.productType,
-            html: selectedTemplate.html,
-            css: selectedTemplate.css,
-            isActive: selectedTemplate.isActive,
-          }),
-        });
+        const response = await fetch(
+          `/api/pdf-templates/${selectedTemplate.id}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: selectedTemplate.name,
+              description: selectedTemplate.description,
+              productType: selectedTemplate.productType,
+              html: selectedTemplate.html,
+              css: selectedTemplate.css,
+              isActive: selectedTemplate.isActive,
+            }),
+          }
+        );
 
         if (!response.ok) {
           throw new Error("Failed to update template");
@@ -372,7 +377,9 @@ export default function PDFTemplatesPage() {
                         Dernière modification:
                       </Label>
                       <span className="text-sm text-muted-foreground">
-                        {new Date(template.updatedAt).toLocaleDateString("fr-FR")}
+                        {new Date(template.updatedAt).toLocaleDateString(
+                          "fr-FR"
+                        )}
                       </span>
                     </div>
                   </div>
@@ -622,8 +629,9 @@ export default function PDFTemplatesPage() {
           onSave={async (updatedTemplate) => {
             try {
               // Vérifier si c'est un template par défaut (ID commence par "template-")
-              const isDefaultTemplate = updatedTemplate.id.startsWith("template-");
-              
+              const isDefaultTemplate =
+                updatedTemplate.id.startsWith("template-");
+
               if (isDefaultTemplate) {
                 // Créer un nouveau template en BDD
                 const response = await fetch("/api/pdf-templates", {
@@ -648,18 +656,21 @@ export default function PDFTemplatesPage() {
                 toast.success("Nouveau template créé avec succès");
               } else {
                 // Mettre à jour le template existant
-                const response = await fetch(`/api/pdf-templates/${updatedTemplate.id}`, {
-                  method: "PATCH",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    name: updatedTemplate.name,
-                    description: updatedTemplate.description,
-                    productType: updatedTemplate.productType,
-                    html: updatedTemplate.html,
-                    css: updatedTemplate.css,
-                    isActive: updatedTemplate.isActive,
-                  }),
-                });
+                const response = await fetch(
+                  `/api/pdf-templates/${updatedTemplate.id}`,
+                  {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      name: updatedTemplate.name,
+                      description: updatedTemplate.description,
+                      productType: updatedTemplate.productType,
+                      html: updatedTemplate.html,
+                      css: updatedTemplate.css,
+                      isActive: updatedTemplate.isActive,
+                    }),
+                  }
+                );
 
                 if (!response.ok) {
                   throw new Error("Failed to update template");
@@ -667,7 +678,9 @@ export default function PDFTemplatesPage() {
 
                 const savedTemplate = await response.json();
                 setTemplates((prev) =>
-                  prev.map((t) => (t.id === savedTemplate.id ? savedTemplate : t))
+                  prev.map((t) =>
+                    t.id === savedTemplate.id ? savedTemplate : t
+                  )
                 );
                 toast.success("Template mis à jour avec succès");
               }

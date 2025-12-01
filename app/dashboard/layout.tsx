@@ -25,11 +25,16 @@ export default async function DashboardLayout({
       <AuthGuard>
         <GiftCardProvider>
           <SidebarProvider>
-            <div className="flex min-h-screen w-full">
+            <div className="flex min-h-screen w-full" role="application">
               <DashboardSidebar />
               <div className="flex flex-1 flex-col">
                 <DashboardHeader user={session.user} />
-                <main className="flex-1 p-6 bg-slate-50 dark:bg-slate-900">
+                <main
+                  className="flex-1 p-6 bg-slate-50 dark:bg-slate-900"
+                  id="main-content"
+                  role="main"
+                  aria-label="Contenu principal du dashboard"
+                >
                   {children}
                 </main>
               </div>

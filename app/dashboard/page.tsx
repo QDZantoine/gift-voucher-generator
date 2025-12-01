@@ -47,121 +47,161 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Tableau de bord</h1>
-        <p className="text-muted-foreground">
+    <div className="space-y-6" role="main">
+      <header>
+        <h1 className="text-3xl font-bold tracking-tight">
+          Tableau de bord
+        </h1>
+        <p className="text-muted-foreground" role="doc-subtitle">
           Vue d&apos;ensemble de vos bons cadeaux
         </p>
-      </div>
+      </header>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <section aria-labelledby="stats-heading">
+        <h2 id="stats-heading" className="sr-only">
+          Statistiques des bons cadeaux
+        </h2>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4" role="list">
+          <Card role="listitem">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Total des bons
+              </CardTitle>
+              <Gift
+                className="h-4 w-4 text-muted-foreground"
+                aria-hidden="true"
+              />
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <Skeleton className="h-8 w-16" aria-label="Chargement..." />
+              ) : (
+                <div className="text-2xl font-bold" aria-live="polite">
+                  {stats.total}
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Bons générés au total
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card role="listitem">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Bons actifs</CardTitle>
+              <TrendingUp
+                className="h-4 w-4 text-green-600"
+                aria-hidden="true"
+              />
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <Skeleton className="h-8 w-16" aria-label="Chargement..." />
+              ) : (
+                <div className="text-2xl font-bold" aria-live="polite">
+                  {stats.active}
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Non utilisés et valides
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card role="listitem">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Bons utilisés</CardTitle>
+              <CheckCircle
+                className="h-4 w-4 text-blue-600"
+                aria-hidden="true"
+              />
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <Skeleton className="h-8 w-16" aria-label="Chargement..." />
+              ) : (
+                <div className="text-2xl font-bold" aria-live="polite">
+                  {stats.used}
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Validés en restaurant
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card role="listitem">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Bons expirés</CardTitle>
+              <XCircle className="h-4 w-4 text-red-600" aria-hidden="true" />
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <Skeleton className="h-8 w-16" aria-label="Chargement..." />
+              ) : (
+                <div className="text-2xl font-bold" aria-live="polite">
+                  {stats.expired}
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Date d&apos;expiration dépassée
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      <section aria-labelledby="actions-heading">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total des bons
+          <CardHeader>
+            <CardTitle id="actions-heading">
+              Bienvenue sur votre dashboard
             </CardTitle>
-            <Gift className="h-4 w-4 text-muted-foreground" />
+            <CardDescription>Gérez vos bons cadeaux facilement</CardDescription>
           </CardHeader>
-          <CardContent>
-            {loading ? (
-              <Skeleton className="h-8 w-16" />
-            ) : (
-              <div className="text-2xl font-bold">{stats.total}</div>
-            )}
-            <p className="text-xs text-muted-foreground">
-              Bons générés au total
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Bons actifs</CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <Skeleton className="h-8 w-16" />
-            ) : (
-              <div className="text-2xl font-bold">{stats.active}</div>
-            )}
-            <p className="text-xs text-muted-foreground">
-              Non utilisés et valides
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Bons utilisés</CardTitle>
-            <CheckCircle className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <Skeleton className="h-8 w-16" />
-            ) : (
-              <div className="text-2xl font-bold">{stats.used}</div>
-            )}
-            <p className="text-xs text-muted-foreground">
-              Validés en restaurant
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Bons expirés</CardTitle>
-            <XCircle className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <Skeleton className="h-8 w-16" />
-            ) : (
-              <div className="text-2xl font-bold">{stats.expired}</div>
-            )}
-            <p className="text-xs text-muted-foreground">
-              Date d&apos;expiration dépassée
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Bienvenue sur votre dashboard</CardTitle>
-          <CardDescription>Gérez vos bons cadeaux facilement</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Link href="/dashboard/gift-cards/create">
-            <div className="rounded-lg border p-4 hover:bg-accent hover:border-accent-foreground/20 transition-colors cursor-pointer">
-              <h3 className="font-semibold mb-2">🎁 Créer un bon cadeau</h3>
+          <CardContent className="space-y-4">
+            <Link
+              href="/dashboard/gift-cards/create"
+              className="block rounded-lg border p-4 hover:bg-accent hover:border-accent-foreground/20 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+              aria-label="Créer un bon cadeau - Allez dans Bons cadeaux pour créer un nouveau bon directement depuis le restaurant"
+            >
+              <h3 className="font-semibold mb-2">
+                <span aria-hidden="true">🎁</span> Créer un bon cadeau
+              </h3>
               <p className="text-sm text-muted-foreground">
                 Allez dans &quot;Bons cadeaux&quot; pour créer un nouveau bon
                 directement depuis le restaurant.
               </p>
-            </div>
-          </Link>
-          <Link href="/dashboard/validation">
-            <div className="rounded-lg border p-4 hover:bg-accent hover:border-accent-foreground/20 transition-colors cursor-pointer">
-              <h3 className="font-semibold mb-2">✅ Valider un bon</h3>
+            </Link>
+            <Link
+              href="/dashboard/validation"
+              className="block rounded-lg border p-4 hover:bg-accent hover:border-accent-foreground/20 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+              aria-label="Valider un bon - Utilisez la section Validation pour scanner ou rechercher un bon à valider"
+            >
+              <h3 className="font-semibold mb-2">
+                <span aria-hidden="true">✅</span> Valider un bon
+              </h3>
               <p className="text-sm text-muted-foreground">
                 Utilisez la section &quot;Validation&quot; pour scanner ou
                 rechercher un bon à valider.
               </p>
-            </div>
-          </Link>
-          <Link href="/dashboard/exclusion-periods">
-            <div className="rounded-lg border p-4 hover:bg-accent hover:border-accent-foreground/20 transition-colors cursor-pointer">
-              <h3 className="font-semibold mb-2">📅 Gérer les exclusions</h3>
+            </Link>
+            <Link
+              href="/dashboard/exclusion-periods"
+              className="block rounded-lg border p-4 hover:bg-accent hover:border-accent-foreground/20 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+              aria-label="Gérer les exclusions - Configurez les périodes spéciales comme Noël ou Feria dans Périodes d'exclusion"
+            >
+              <h3 className="font-semibold mb-2">
+                <span aria-hidden="true">📅</span> Gérer les exclusions
+              </h3>
               <p className="text-sm text-muted-foreground">
                 Configurez les périodes spéciales (Noël, Feria, etc.) dans
                 &quot;Périodes d&apos;exclusion&quot;.
               </p>
-            </div>
-          </Link>
-        </CardContent>
-      </Card>
+            </Link>
+          </CardContent>
+        </Card>
+      </section>
     </div>
   );
 }
