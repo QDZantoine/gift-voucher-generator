@@ -62,7 +62,7 @@ export async function sendEmailWithRetry(
   const apiKey = process.env.RESEND_API_KEY;
 
   if (!apiKey) {
-    console.error("❌ RESEND_API_KEY n'est pas configurée");
+    console.error("RESEND_API_KEY n'est pas configurée");
     return {
       success: false,
       error: "RESEND_API_KEY environment variable is required",
@@ -73,10 +73,7 @@ export async function sendEmailWithRetry(
   // Mode test si la clé Resend est une clé de test
   if (apiKey.startsWith("re_test_")) {
     console.warn(
-      "⚠️ Mode TEST activé - Les emails ne seront pas réellement envoyés"
-    );
-    console.warn(
-      "   Utilisez une clé de production (re_live_...) pour envoyer de vrais emails"
+      "Mode TEST activé - Les emails ne seront pas réellement envoyés"
     );
     // Simuler un délai d'envoi
     await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -87,17 +84,6 @@ export async function sendEmailWithRetry(
       retryCount: 0,
     };
   }
-
-  console.log("📧 Tentative d'envoi d'email via Resend...");
-  console.log(
-    `   De: ${process.env.EMAIL_FROM || "noreply@influences-bayonne.fr"}`
-  );
-  console.log(
-    `   À: ${
-      Array.isArray(emailData.to) ? emailData.to.join(", ") : emailData.to
-    }`
-  );
-  console.log(`   Sujet: ${emailData.subject}`);
 
   const resend = getResendInstance();
 
@@ -170,11 +156,9 @@ export async function sendEmailWithRetry(
   // Retry logic avec gestion d'erreurs spécifiques
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      console.log(`📤 Tentative ${attempt}/${maxRetries} d'envoi d'email...`);
       const { data, error } = await resend.emails.send(emailOptions);
 
       if (!error && data) {
-        console.log(`✅ Email envoyé avec succès! ID: ${data.id}`);
         return {
           success: true,
           emailId: data.id,
@@ -183,18 +167,11 @@ export async function sendEmailWithRetry(
       }
 
       // Gestion des erreurs spécifiques
-      // L'erreur Resend peut avoir différentes structures
-      console.error(`❌ Erreur Resend (tentative ${attempt}):`, {
-        error: error,
-        errorType: typeof error,
-        errorString: JSON.stringify(error, null, 2),
-      });
-
       const resendError = error as ResendError;
 
       // Si l'erreur n'a pas de structure attendue, logger tout
       if (!resendError.name && !resendError.message) {
-        console.error("❌ Structure d'erreur inattendue:", error);
+        console.error("Structure d'erreur inattendue:", error);
         return {
           success: false,
           error: `Unexpected error: ${JSON.stringify(error)}`,
@@ -204,10 +181,7 @@ export async function sendEmailWithRetry(
 
       // Erreurs de validation - ne pas retry
       if (resendError.name === "validation_error") {
-        console.error(
-          "❌ Erreur de validation - pas de retry:",
-          resendError.message
-        );
+        console.error("Erreur de validation Resend:", resendError.message);
         return {
           success: false,
           error: `Validation error: ${resendError.message}`,
@@ -217,7 +191,7 @@ export async function sendEmailWithRetry(
 
       // Champs manquants - ne pas retry
       if (resendError.name === "missing_required_field") {
-        console.error("❌ Champ requis manquant:", resendError.message);
+        console.error("Champ requis manquant:", resendError.message);
         return {
           success: false,
           error: `Missing required field: ${resendError.message}`,
@@ -228,17 +202,13 @@ export async function sendEmailWithRetry(
       // Erreurs d'application - retry possible
       if (resendError.name === "application_error" && attempt < maxRetries) {
         const delay = 1000 * Math.pow(2, attempt - 1); // Exponential backoff
-        console.warn(
-          `⚠️ Tentative ${attempt} échouée, retry dans ${delay}ms:`,
-          resendError.message
-        );
         await new Promise((resolve) => setTimeout(resolve, delay));
         continue;
       }
 
       // Autres erreurs ou max retries atteint
       console.error(
-        `❌ Échec définitif après ${attempt} tentatives:`,
+        `Échec d'envoi d'email après ${attempt} tentatives:`,
         resendError.message
       );
       return {
@@ -247,7 +217,10 @@ export async function sendEmailWithRetry(
         retryCount: attempt - 1,
       };
     } catch (error) {
-      console.error(`❌ Erreur inattendue (tentative ${attempt}):`, error);
+      console.error(
+        `Erreur inattendue lors de l'envoi d'email (tentative ${attempt}):`,
+        error
+      );
 
       if (attempt === maxRetries) {
         return {

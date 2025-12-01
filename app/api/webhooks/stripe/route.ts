@@ -153,27 +153,18 @@ export async function POST(request: NextRequest) {
         };
 
         // Envoyer l'email à l'acheteur avec retry logic
-        console.log(
-          `📧 [Webhook Stripe] Tentative d'envoi d'email pour bon cadeau ${giftCard.code}`
-        );
-        console.log(`   Destinataire: ${giftCard.purchaserEmail}`);
-
         const emailResult = await sendEmailWithRetry(emailData, 3);
 
         let emailSent = false;
         if (!emailResult.success) {
           console.error(
-            "❌ [Webhook Stripe] Échec de l'envoi d'email à l'acheteur:",
-            emailResult.error,
-            `Retry count: ${emailResult.retryCount}`
+            "Échec de l'envoi d'email à l'acheteur via webhook:",
+            emailResult.error
           );
           // Ne pas faire échouer le webhook pour un problème d'email
           // L'email pourra être renvoyé manuellement depuis le dashboard
         } else {
           emailSent = true;
-          console.log(
-            `✅ [Webhook Stripe] Email envoyé avec succès! ID: ${emailResult.emailId}`
-          );
         }
 
         // Marquer l'email comme envoyé
