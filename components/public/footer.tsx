@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Clock, MapPin, Phone, Mail } from "lucide-react";
+import { Clock, MapPin, Phone, Mail, Instagram } from "lucide-react";
 
 export function PublicFooter() {
   return (
@@ -70,6 +70,7 @@ export function PublicFooter() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-start gap-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-all duration-300 group"
+                aria-label="Adresse du restaurant - 19 Rue Vieille Boucherie, 64100 Bayonne"
               >
                 <MapPin className="w-5 h-5 text-white/60 group-hover:text-white/90 transition-colors flex-shrink-0 mt-0.5" />
                 <div>
@@ -84,6 +85,7 @@ export function PublicFooter() {
               <a
                 href="tel:+33559017504"
                 className="flex items-start gap-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-all duration-300 group"
+                aria-label="Appeler le restaurant - 05 59 01 75 04"
               >
                 <Phone className="w-5 h-5 text-white/60 group-hover:text-white/90 transition-colors flex-shrink-0 mt-0.5" />
                 <div>
@@ -92,6 +94,23 @@ export function PublicFooter() {
                   </p>
                   <p className="font-lato text-xs text-white/70">
                     Réservations & Informations
+                  </p>
+                </div>
+              </a>
+              <a
+                href="https://www.instagram.com/influences_bayonne/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-start gap-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-all duration-300 group"
+                aria-label="Suivez-nous sur Instagram - @influences_bayonne"
+              >
+                <Instagram className="w-5 h-5 text-white/60 group-hover:text-white/90 transition-colors flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-lato text-sm font-medium text-white/95">
+                    @influences_bayonne
+                  </p>
+                  <p className="font-lato text-xs text-white/70">
+                    Suivez-nous sur Instagram
                   </p>
                 </div>
               </a>

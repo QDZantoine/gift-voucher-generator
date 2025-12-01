@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Home } from "lucide-react";
+import { Home, Instagram } from "lucide-react";
 
 export function PublicHeader() {
   return (
@@ -23,7 +23,7 @@ export function PublicHeader() {
           </Link>
 
           {/* Navigation */}
-          <nav className="flex items-center space-x-8">
+          <nav className="flex items-center space-x-4 sm:space-x-8">
             {/* Bouton Accueil - Desktop */}
             <Link
               href="/"
@@ -34,6 +34,17 @@ export function PublicHeader() {
               <span className="absolute inset-x-0 bottom-0 h-0.5 bg-[#1A2B4B] transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
             </Link>
 
+            {/* Instagram - Desktop */}
+            <a
+              href="https://www.instagram.com/influences_bayonne/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden sm:flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 text-white hover:from-purple-700 hover:via-pink-700 hover:to-orange-600 transition-all duration-300 shadow-md hover:shadow-lg hover:scale-110"
+              aria-label="Suivez-nous sur Instagram"
+            >
+              <Instagram className="w-5 h-5" />
+            </a>
+
             {/* Bouton Accueil - Mobile */}
             <Link
               href="/"
@@ -42,6 +53,17 @@ export function PublicHeader() {
             >
               <Home className="w-5 h-5" />
             </Link>
+
+            {/* Instagram - Mobile */}
+            <a
+              href="https://www.instagram.com/influences_bayonne/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="sm:hidden flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 text-white hover:from-purple-700 hover:via-pink-700 hover:to-orange-600 transition-all duration-300 shadow-md hover:shadow-lg"
+              aria-label="Suivez-nous sur Instagram"
+            >
+              <Instagram className="w-5 h-5" />
+            </a>
           </nav>
         </div>
       </div>
