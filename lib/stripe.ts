@@ -11,11 +11,11 @@ export const stripe = new Stripe(
 );
 
 // Prix des menus (en euros)
+// Note: Ces prix sont une référence. Les prix réels viennent de la base de données (MenuType)
 export const MENU_PRICES = {
-  "Menu Influences": 45,
-  "Menu Dégustation": 65,
-  "Menu Prestige": 85,
-  "Menu Découverte": 35,
+  "Cantine Influences": 22,
+  "Menu Influences": 58,
+  "Menu carte": 39,
 } as const;
 
 export type MenuType = keyof typeof MENU_PRICES;

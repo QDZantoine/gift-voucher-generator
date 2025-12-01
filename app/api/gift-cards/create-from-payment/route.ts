@@ -156,13 +156,25 @@ export async function POST(request: NextRequest) {
       };
 
       // Envoyer l'email à l'acheteur avec retry logic
+      console.log(
+        `📧 [Create Gift Card] Tentative d'envoi d'email pour bon cadeau ${giftCard.code}`
+      );
+      console.log(`   Destinataire: ${giftCard.purchaserEmail}`);
+
       const emailResult = await sendEmailWithRetry(emailData, 3);
 
       let emailSent = false;
       if (emailResult.success) {
         emailSent = true;
+        console.log(
+          `✅ [Create Gift Card] Email envoyé avec succès! ID: ${emailResult.emailId}`
+        );
       } else {
-        console.error("❌ Échec de l'envoi d'email à l'acheteur:", emailResult.error);
+        console.error(
+          "❌ [Create Gift Card] Échec de l'envoi d'email:",
+          emailResult.error,
+          `Retry count: ${emailResult.retryCount}`
+        );
       }
 
       // Marquer l'email comme envoyé ou non

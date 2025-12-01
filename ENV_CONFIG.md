@@ -96,3 +96,4 @@ EMAIL_REPLY_TO=contact@restaurant-influences.fr
 - DNS Records: https://resend.com/docs/dashboard/domains/dns-records
 - Pricing: https://resend.com/pricing
 
+

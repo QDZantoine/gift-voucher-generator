@@ -257,3 +257,4 @@ Cette optimisation a permis d'améliorer significativement les performances de l
 
 L'application est maintenant **production-ready** et optimisée pour offrir la meilleure expérience utilisateur possible ! ✨
 
+

@@ -58,11 +58,26 @@ export async function sendEmailWithRetry(
   emailData: EmailData,
   maxRetries: number = 3
 ): Promise<EmailResult> {
-  // Mode test si la clé Resend n'est pas configurée
-  if (
-    !process.env.RESEND_API_KEY ||
-    process.env.RESEND_API_KEY.startsWith("re_test_")
-  ) {
+  // Vérifier la configuration Resend
+  const apiKey = process.env.RESEND_API_KEY;
+
+  if (!apiKey) {
+    console.error("❌ RESEND_API_KEY n'est pas configurée");
+    return {
+      success: false,
+      error: "RESEND_API_KEY environment variable is required",
+      retryCount: 0,
+    };
+  }
+
+  // Mode test si la clé Resend est une clé de test
+  if (apiKey.startsWith("re_test_")) {
+    console.warn(
+      "⚠️ Mode TEST activé - Les emails ne seront pas réellement envoyés"
+    );
+    console.warn(
+      "   Utilisez une clé de production (re_live_...) pour envoyer de vrais emails"
+    );
     // Simuler un délai d'envoi
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
@@ -72,6 +87,17 @@ export async function sendEmailWithRetry(
       retryCount: 0,
     };
   }
+
+  console.log("📧 Tentative d'envoi d'email via Resend...");
+  console.log(
+    `   De: ${process.env.EMAIL_FROM || "noreply@influences-bayonne.fr"}`
+  );
+  console.log(
+    `   À: ${
+      Array.isArray(emailData.to) ? emailData.to.join(", ") : emailData.to
+    }`
+  );
+  console.log(`   Sujet: ${emailData.subject}`);
 
   const resend = getResendInstance();
 
@@ -121,9 +147,11 @@ export async function sendEmailWithRetry(
   // Retry logic avec gestion d'erreurs spécifiques
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
+      console.log(`📤 Tentative ${attempt}/${maxRetries} d'envoi d'email...`);
       const { data, error } = await resend.emails.send(emailOptions);
 
-      if (!error) {
+      if (!error && data) {
+        console.log(`✅ Email envoyé avec succès! ID: ${data.id}`);
         return {
           success: true,
           emailId: data.id,
@@ -132,7 +160,24 @@ export async function sendEmailWithRetry(
       }
 
       // Gestion des erreurs spécifiques
+      // L'erreur Resend peut avoir différentes structures
+      console.error(`❌ Erreur Resend (tentative ${attempt}):`, {
+        error: error,
+        errorType: typeof error,
+        errorString: JSON.stringify(error, null, 2),
+      });
+
       const resendError = error as ResendError;
+
+      // Si l'erreur n'a pas de structure attendue, logger tout
+      if (!resendError.name && !resendError.message) {
+        console.error("❌ Structure d'erreur inattendue:", error);
+        return {
+          success: false,
+          error: `Unexpected error: ${JSON.stringify(error)}`,
+          retryCount: attempt - 1,
+        };
+      }
 
       // Erreurs de validation - ne pas retry
       if (resendError.name === "validation_error") {
