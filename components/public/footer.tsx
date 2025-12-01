@@ -66,7 +66,7 @@ export function PublicFooter() {
             </h3>
             <div className="grid sm:grid-cols-2 gap-4">
               <a
-                href="https://maps.google.com/?q=19+Rue+Vieille+Boucherie+64100+Bayonne"
+                href="https://share.google/y73qPqX6kbbpArkWO"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-start gap-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-all duration-300 group"
@@ -156,9 +156,14 @@ export function PublicFooter() {
                   ❤️
                 </span>{" "}
                 by{" "}
-                <span className="text-white/70 font-medium">
+                <a
+                  href="https://www.anthea-digitalbloom.fr/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-white/70 font-medium hover:text-white transition-all duration-300 underline-offset-4 hover:underline"
+                >
                   Antoine Quendez
-                </span>
+                </a>
               </p>
             </div>
           </div>

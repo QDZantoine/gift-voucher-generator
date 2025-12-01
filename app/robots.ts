@@ -5,7 +5,7 @@ import { MetadataRoute } from "next";
  * @see https://nextjs.org/docs/app/api-reference/file-conventions/metadata/robots
  */
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = "https://gift.restaurant-influences.fr";
+  const baseUrl = "https://influences-bayonne.fr";
 
   return {
     rules: [
@@ -25,13 +25,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "Googlebot",
         allow: "/",
-        disallow: [
-          "/dashboard/",
-          "/admin/",
-          "/api/",
-          "/login",
-          "/register",
-        ],
+        disallow: ["/dashboard/", "/admin/", "/api/", "/login", "/register"],
       },
       {
         userAgent: "Googlebot-Image",
@@ -55,4 +49,3 @@ export default function robots(): MetadataRoute.Robots {
     host: baseUrl,
   };
 }
-

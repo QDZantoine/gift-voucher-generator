@@ -20,31 +20,37 @@ const lato = Lato({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://gift.restaurant-influences.fr"),
+  metadataBase: new URL("https://influences-bayonne.fr"),
   title: {
-    default: "Influences Restaurant - Bons Cadeaux Bayonne | Gastronomie",
-    template: "%s | Influences Restaurant Bayonne",
+    default: "Bons Cadeaux Restaurant Influences Bayonne | Cuisine Moderne",
+    template: "%s | Restaurant Influences Bayonne",
   },
   description:
-    "Offrez une expérience gastronomique inoubliable avec les bons cadeaux du Restaurant Influences à Bayonne. Cuisine moderne et raffinée, produits locaux. Réservez en ligne.",
+    "Offrez un moment de partage avec les bons cadeaux du Restaurant Influences à Bayonne. Cuisine moderne et raffinée, produits locaux du Pays Basque. Réservez en ligne.",
   keywords: [
-    "restaurant bayonne",
-    "bon cadeau restaurant",
-    "gastronomie bayonne",
-    "influences bayonne",
-    "carte cadeau restaurant",
-    "restaurant bistronomique",
-    "cuisine moderne bayonne",
+    "bon cadeau restaurant bayonne",
+    "restaurant influences bayonne",
+    "carte cadeau restaurant pays basque",
     "restaurant gastronomique bayonne",
-    "cadeau gourmand",
-    "restaurant pays basque",
+    "bon cadeau gastronomique",
+    "restaurant bistronomique bayonne",
+    "cuisine moderne bayonne",
+    "restaurant 64100",
+    "cadeau restaurant bayonne",
+    "restaurant influences",
+    "bon cadeau influences",
+    "restaurant vieille boucherie bayonne",
   ],
-  authors: [{ name: "Antoine Quendez", url: "https://gift.restaurant-influences.fr" }],
+  authors: [
+    { name: "Antoine Quendez", url: "https://www.anthea-digitalbloom.fr" },
+    { name: "Restaurant Influences", url: "https://restaurant-influences.fr" },
+  ],
   creator: "Antoine Quendez",
   publisher: "Restaurant Influences",
-  applicationName: "Influences Gift Cards",
+  applicationName: "Restaurant Influences - Bons Cadeaux",
   referrer: "origin-when-cross-origin",
   category: "Restaurant",
+  classification: "Gastronomie, Restaurant, Bons Cadeaux",
   formatDetection: {
     email: false,
     address: false,
@@ -53,6 +59,7 @@ export const metadata: Metadata = {
   verification: {
     // Ajoutez vos codes de vérification Google, Bing, etc.
     // google: "votre-code-verification-google",
+    // bing: "votre-code-verification-bing",
     // yandex: "votre-code-verification-yandex",
   },
   appleWebApp: {
@@ -62,7 +69,8 @@ export const metadata: Metadata = {
     startupImage: [
       {
         url: "/apple-icon.png",
-        media: "(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)",
+        media:
+          "(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)",
       },
     ],
   },
@@ -70,25 +78,20 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "fr_FR",
-    url: "https://gift.restaurant-influences.fr",
+    url: "https://influences-bayonne.fr",
     siteName: "Restaurant Influences Bayonne",
-    title: "Influences Restaurant - Bons Cadeaux Gastronomiques à Bayonne",
+    title: "Bons Cadeaux Restaurant Influences - Cuisine Moderne à Bayonne",
     description:
-      "Offrez une expérience gastronomique unique au Restaurant Influences à Bayonne. Bons cadeaux personnalisés, cuisine moderne avec produits locaux.",
+      "Offrez une expérience gastronomique unique au Restaurant Influences à Bayonne. Bons cadeaux personnalisés, cuisine moderne avec produits locaux du Pays Basque. Valable 1 an.",
+    // Next.js utilise automatiquement opengraph-image.tsx si présent
+    // L'image est générée dynamiquement à /opengraph-image
     images: [
       {
-        url: "https://gift.restaurant-influences.fr/images/og-image.jpg",
+        url: "https://influences-bayonne.fr/opengraph-image",
         width: 1200,
         height: 630,
-        alt: "Restaurant Influences Bayonne - Cuisine Moderne et Raffinée",
-        type: "image/jpeg",
-      },
-      {
-        url: "https://gift.restaurant-influences.fr/images/logo-bleu.svg",
-        width: 800,
-        height: 400,
-        alt: "Logo Restaurant Influences",
-        type: "image/svg+xml",
+        alt: "Restaurant Influences Bayonne - Bons Cadeaux Gastronomiques",
+        type: "image/png",
       },
     ],
   },
@@ -96,16 +99,17 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     site: "@influences_bayonne",
     creator: "@influences_bayonne",
-    title: "Influences Restaurant - Bons Cadeaux Gastronomiques Bayonne",
+    title: "Bons Cadeaux Restaurant Influences - Cuisine Moderne Bayonne",
     description:
-      "Offrez l'expérience d'une cuisine moderne et raffinée. Bons cadeaux personnalisés pour le Restaurant Influences à Bayonne.",
-    images: ["https://gift.restaurant-influences.fr/images/og-image.jpg"],
+      "Offrez l'expérience d'une cuisine moderne et raffinée au Restaurant Influences à Bayonne. Bons cadeaux personnalisés, produits locaux du Pays Basque.",
+    // Utilise la même image que Open Graph (générée dynamiquement)
+    images: ["https://influences-bayonne.fr/opengraph-image"],
   },
   alternates: {
-    canonical: "https://gift.restaurant-influences.fr",
+    canonical: "https://influences-bayonne.fr",
     languages: {
-      "fr-FR": "https://gift.restaurant-influences.fr",
-      "x-default": "https://gift.restaurant-influences.fr",
+      "fr-FR": "https://influences-bayonne.fr",
+      "x-default": "https://influences-bayonne.fr",
     },
   },
   robots: {
@@ -123,18 +127,39 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/icon1.png", sizes: "32x32", type: "image/png" },
+      // SVG icon (moderne, scalable)
       { url: "/icon0.svg", type: "image/svg+xml" },
+      // PNG icons pour compatibilité
+      { url: "/icon1.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon.ico", sizes: "any" },
     ],
-    apple: [
-      { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
+    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
+    shortcut: [{ url: "/favicon.ico" }],
+    other: [
+      // PWA icons depuis manifest.json
+      {
+        rel: "apple-touch-icon",
+        url: "/web-app-manifest-192x192.png",
+        sizes: "192x192",
+      },
+      {
+        rel: "apple-touch-icon",
+        url: "/web-app-manifest-512x512.png",
+        sizes: "512x512",
+      },
     ],
   },
   other: {
     "mobile-web-app-capable": "yes",
     "apple-mobile-web-app-capable": "yes",
     "apple-mobile-web-app-status-bar-style": "black-translucent",
-    "apple-mobile-web-app-title": "influences-bayonne",
+    "apple-mobile-web-app-title": "Influences Bayonne",
+    "geo.region": "FR-NAQ",
+    "geo.placename": "Bayonne",
+    "geo.position": "43.4929;-1.4748",
+    ICBM: "43.4929, -1.4748",
+    "site:official": "https://restaurant-influences.fr",
+    "site:developer": "https://www.anthea-digitalbloom.fr",
   },
 };
 

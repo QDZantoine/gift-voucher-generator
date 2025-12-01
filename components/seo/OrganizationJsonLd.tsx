@@ -13,7 +13,7 @@ export function OrganizationJsonLd() {
     url: "https://restaurant-influences.fr",
     logo: {
       "@type": "ImageObject",
-      url: "https://gift.restaurant-influences.fr/images/logo-bleu.svg",
+      url: "https://influences-bayonne.fr/images/logo-bleu.svg",
       width: 200,
       height: 70,
     },
@@ -49,12 +49,26 @@ export function OrganizationJsonLd() {
       addressCountry: "FR",
     },
 
-    // Réseaux sociaux
+    // Réseaux sociaux et sites
     sameAs: [
+      "https://restaurant-influences.fr",
+      "https://influences-bayonne.fr",
       "https://www.facebook.com/restaurantinfluences",
       "https://www.instagram.com/restaurantinfluences",
-      "https://restaurant-influences.fr",
     ],
+    
+    // Développeur / Créateur du site
+    creator: {
+      "@type": "Person",
+      name: "Antoine Quendez",
+      url: "https://www.anthea-digitalbloom.fr",
+      jobTitle: "Développeur Web",
+      worksFor: {
+        "@type": "Organization",
+        name: "ANTHEA Digital Bloom",
+        url: "https://www.anthea-digitalbloom.fr",
+      },
+    },
 
     // Fondateurs
     founder: [

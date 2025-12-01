@@ -5,7 +5,7 @@ import { MetadataRoute } from "next";
  * @see https://nextjs.org/docs/app/api-reference/file-conventions/metadata/sitemap
  */
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://gift.restaurant-influences.fr";
+  const baseUrl = "https://influences-bayonne.fr";
   const currentDate = new Date();
 
   return [
@@ -39,4 +39,3 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
 // Configuration pour Next.js
 export const revalidate = 3600; // Revalider toutes les heures
-

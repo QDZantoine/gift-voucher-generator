@@ -13,8 +13,8 @@ export function RestaurantJsonLd() {
     description:
       "Restaurant bistronomique à Bayonne proposant une cuisine moderne et raffinée avec des produits locaux. Cadre intimiste et feutré au cœur du Pays Basque.",
     image: [
-      "https://gift.restaurant-influences.fr/images/logo-bleu.svg",
-      "https://gift.restaurant-influences.fr/images/og-image.jpg",
+      "https://influences-bayonne.fr/images/logo-bleu.svg",
+      "https://influences-bayonne.fr/opengraph-image",
     ],
     url: "https://restaurant-influences.fr",
     telephone: "+33559017504",
@@ -80,11 +80,12 @@ export function RestaurantJsonLd() {
       },
     ],
 
-    // Réseaux sociaux (à compléter avec vos vrais liens)
+    // Réseaux sociaux et sites
     sameAs: [
+      "https://restaurant-influences.fr",
+      "https://influences-bayonne.fr",
       "https://www.facebook.com/restaurantinfluences",
       "https://www.instagram.com/restaurantinfluences",
-      // Ajoutez d'autres réseaux sociaux
     ],
 
     // Équipe
@@ -134,7 +135,7 @@ export function RestaurantJsonLd() {
         name: "Bon Cadeau Restaurant Influences",
         description:
           "Offrez une expérience gastronomique inoubliable avec nos bons cadeaux",
-        url: "https://gift.restaurant-influences.fr",
+        url: "https://influences-bayonne.fr",
       },
       availability: "https://schema.org/InStock",
       priceCurrency: "EUR",

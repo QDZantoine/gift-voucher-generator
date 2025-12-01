@@ -18,22 +18,22 @@ export function GiftCardProductJsonLd({
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Product",
-    "@id": "https://gift.restaurant-influences.fr/#giftcard",
+    "@id": "https://influences-bayonne.fr/#giftcard",
     name,
     description,
     image: [
-      "https://gift.restaurant-influences.fr/images/logo-bleu.svg",
-      "https://gift.restaurant-influences.fr/images/og-image.jpg",
+      "https://influences-bayonne.fr/images/logo-bleu.svg",
+      "https://influences-bayonne.fr/opengraph-image",
     ],
     brand: {
       "@type": "Brand",
       name: "Restaurant Influences",
-      logo: "https://gift.restaurant-influences.fr/images/logo-bleu.svg",
+      logo: "https://influences-bayonne.fr/images/logo-bleu.svg",
     },
     category: "Gift Card",
     offers: {
       "@type": "Offer",
-      url: "https://gift.restaurant-influences.fr",
+      url: "https://influences-bayonne.fr",
       priceCurrency: "EUR",
       price: price?.toString() || "variable",
       priceValidUntil: new Date(
