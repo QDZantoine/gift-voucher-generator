@@ -129,14 +129,37 @@ export async function sendEmailWithRetry(
     html: emailData.html,
     text: emailData.text,
     attachments: emailData.attachments,
-    tags: [
-      { name: "category", value: "gift_card" },
-      { name: "source", value: "restaurant_influences" },
-      ...(emailData.tags || []),
-    ].map((tag) => ({
-      name: tag.name.replace(/[^a-zA-Z0-9_-]/g, "_"),
-      value: tag.value.replace(/[^a-zA-Z0-9_-]/g, "_"),
-    })),
+    tags: (() => {
+      // Tags par défaut
+      const defaultTags = [{ name: "category", value: "gift_card" }];
+
+      // Vérifier si un tag "source" existe déjà dans emailData.tags
+      const hasSourceTag = emailData.tags?.some((tag) => tag.name === "source");
+
+      // Ajouter le tag source par défaut seulement s'il n'existe pas déjà
+      if (!hasSourceTag) {
+        defaultTags.push({ name: "source", value: "restaurant_influences" });
+      }
+
+      // Fusionner les tags en évitant les doublons
+      const allTags = [...defaultTags, ...(emailData.tags || [])];
+      const uniqueTags = allTags.reduce((acc, tag) => {
+        // Vérifier si un tag avec le même nom existe déjà
+        const existingIndex = acc.findIndex((t) => t.name === tag.name);
+        if (existingIndex >= 0) {
+          // Remplacer par le dernier (celui de emailData.tags a la priorité)
+          acc[existingIndex] = tag;
+        } else {
+          acc.push(tag);
+        }
+        return acc;
+      }, [] as Array<{ name: string; value: string }>);
+
+      return uniqueTags.map((tag) => ({
+        name: tag.name.replace(/[^a-zA-Z0-9_-]/g, "_"),
+        value: tag.value.replace(/[^a-zA-Z0-9_-]/g, "_"),
+      }));
+    })(),
     headers: {
       "X-Entity-Ref-ID": `gift-card-${Date.now()}`,
       ...emailData.headers,
