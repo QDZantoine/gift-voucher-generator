@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Home, Instagram } from "lucide-react";
+import { Home, Instagram, Facebook } from "lucide-react";
 
 export function PublicHeader() {
   return (
@@ -45,6 +45,17 @@ export function PublicHeader() {
               <Instagram className="w-5 h-5" />
             </a>
 
+            {/* Facebook - Desktop */}
+            <a
+              href="https://www.facebook.com/p/Restaurant-Influences-100070718209314"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden sm:flex items-center justify-center w-10 h-10 rounded-full bg-[#1877F2] text-white hover:bg-[#166FE5] transition-all duration-300 shadow-md hover:shadow-lg hover:scale-110"
+              aria-label="Suivez-nous sur Facebook"
+            >
+              <Facebook className="w-5 h-5" />
+            </a>
+
             {/* Bouton Accueil - Mobile */}
             <Link
               href="/"
@@ -63,6 +74,17 @@ export function PublicHeader() {
               aria-label="Suivez-nous sur Instagram"
             >
               <Instagram className="w-5 h-5" />
+            </a>
+
+            {/* Facebook - Mobile */}
+            <a
+              href="https://www.facebook.com/p/Restaurant-Influences-100070718209314"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="sm:hidden flex items-center justify-center w-10 h-10 rounded-full bg-[#1877F2] text-white hover:bg-[#166FE5] transition-all duration-300 shadow-md hover:shadow-lg"
+              aria-label="Suivez-nous sur Facebook"
+            >
+              <Facebook className="w-5 h-5" />
             </a>
           </nav>
         </div>

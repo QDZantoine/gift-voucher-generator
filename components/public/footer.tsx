@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Clock, MapPin, Phone, Mail, Instagram } from "lucide-react";
+import { Clock, MapPin, Phone, Mail, Instagram, Facebook } from "lucide-react";
 
 export function PublicFooter() {
   return (
@@ -111,6 +111,23 @@ export function PublicFooter() {
                   </p>
                   <p className="font-lato text-xs text-white/70">
                     Suivez-nous sur Instagram
+                  </p>
+                </div>
+              </a>
+              <a
+                href="https://www.facebook.com/p/Restaurant-Influences-100070718209314"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-start gap-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-all duration-300 group"
+                aria-label="Suivez-nous sur Facebook - Restaurant Influences"
+              >
+                <Facebook className="w-5 h-5 text-white/60 group-hover:text-white/90 transition-colors flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-lato text-sm font-medium text-white/95">
+                    Restaurant Influences
+                  </p>
+                  <p className="font-lato text-xs text-white/70">
+                    Suivez-nous sur Facebook
                   </p>
                 </div>
               </a>
