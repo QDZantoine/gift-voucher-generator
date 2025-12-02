@@ -115,16 +115,43 @@ export function GiftCardProductJsonLd({
 
   // Ajouter price seulement si défini et valide
   // Format: nombre avec point comme séparateur décimal (ex: "50.00")
-  if (
+  const hasValidPrice =
     price !== undefined &&
     price !== null &&
     typeof price === "number" &&
-    !isNaN(price)
-  ) {
+    !isNaN(price);
+
+  if (hasValidPrice) {
     offers.price = price.toFixed(2);
   }
 
-  const structuredData = {
+  const structuredData: {
+    "@context": string;
+    "@type": string;
+    "@id": string;
+    name: string;
+    description: string;
+    image: string[];
+    brand: {
+      "@type": string;
+      name: string;
+      logo: string;
+    };
+    category: string;
+    offers?: typeof offers;
+    additionalProperty: Array<{
+      "@type": string;
+      name: string;
+      value: string;
+    }>;
+    aggregateRating: {
+      "@type": string;
+      ratingValue: string;
+      ratingCount: string;
+      bestRating: string;
+      worstRating: string;
+    };
+  } = {
     "@context": "https://schema.org",
     "@type": "Product",
     "@id": "https://influences-bayonne.fr/#giftcard",
@@ -140,7 +167,9 @@ export function GiftCardProductJsonLd({
       logo: "https://influences-bayonne.fr/images/logo-bleu.svg",
     },
     category: "Gift Card",
-    offers,
+    // Inclure offers seulement si le prix est défini (obligatoire pour Google)
+    // Sinon, aggregateRating suffit selon les exigences Google
+    ...(hasValidPrice ? { offers } : {}),
     additionalProperty: [
       {
         "@type": "PropertyValue",
