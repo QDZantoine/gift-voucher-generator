@@ -15,114 +15,60 @@ export function GiftCardProductJsonLd({
   price,
   description = "Offrez une expérience gastronomique inoubliable avec nos bons cadeaux personnalisés. Valable 1 an.",
 }: GiftCardProductJsonLdProps = {}) {
-  // Construire l'objet offers avec price seulement si défini
+  // Construire l'objet offers selon les bonnes pratiques Google
+  // Propriétés requises : price, priceCurrency
+  // Propriétés recommandées : url, availability, priceValidUntil
   const offers: {
     "@type": string;
     url: string;
     priceCurrency: string;
-    priceValidUntil: string;
+    price: string;
     availability: string;
-    seller: {
+    priceValidUntil: string;
+    priceSpecification?: {
       "@type": string;
-      name: string;
-      url: string;
+      price: string;
+      priceCurrency: string;
+      minPrice: string;
+      maxPrice: string;
+      valueAddedTaxIncluded: boolean;
     };
-    validFrom: string;
-    itemCondition: string;
-    hasMerchantReturnPolicy: {
-      "@type": string;
-      applicableCountry: string;
-      returnPolicyCategory: string;
-      merchantReturnDays: number;
-    };
-    shippingDetails: {
-      "@type": string;
-      shippingRate: {
-        "@type": string;
-        value: string;
-        currency: string;
-      };
-      deliveryTime: {
-        "@type": string;
-        handlingTime: {
-          "@type": string;
-          minValue: number;
-          maxValue: number;
-          unitCode: string;
-        };
-        transitTime: {
-          "@type": string;
-          minValue: number;
-          maxValue: number;
-          unitCode: string;
-        };
-      };
-      shippingDestination: {
-        "@type": string;
-        addressCountry: string;
-      };
-    };
-    price?: string;
   } = {
     "@type": "Offer",
     url: "https://influences-bayonne.fr",
     priceCurrency: "EUR",
+    price: "35.00", // Prix minimum par défaut (sera remplacé si un prix valide est fourni)
+    availability: "https://schema.org/InStock",
     priceValidUntil: new Date(
       new Date().setFullYear(new Date().getFullYear() + 1)
     ).toISOString(),
-    availability: "https://schema.org/InStock",
-    seller: {
-      "@type": "Restaurant",
-      name: "Restaurant Influences",
-      url: "https://restaurant-influences.fr",
-    },
-    validFrom: new Date().toISOString(),
-    itemCondition: "https://schema.org/NewCondition",
-    hasMerchantReturnPolicy: {
-      "@type": "MerchantReturnPolicy",
-      applicableCountry: "FR",
-      returnPolicyCategory: "https://schema.org/MerchantReturnNotPermitted",
-      merchantReturnDays: 0,
-    },
-    shippingDetails: {
-      "@type": "OfferShippingDetails",
-      shippingRate: {
-        "@type": "MonetaryAmount",
-        value: "0",
-        currency: "EUR",
-      },
-      deliveryTime: {
-        "@type": "ShippingDeliveryTime",
-        handlingTime: {
-          "@type": "QuantitativeValue",
-          minValue: 0,
-          maxValue: 1,
-          unitCode: "DAY",
-        },
-        transitTime: {
-          "@type": "QuantitativeValue",
-          minValue: 0,
-          maxValue: 0,
-          unitCode: "DAY",
-        },
-      },
-      shippingDestination: {
-        "@type": "DefinedRegion",
-        addressCountry: "FR",
-      },
-    },
   };
 
-  // Ajouter price seulement si défini et valide
-  // Format: nombre avec point comme séparateur décimal (ex: "50.00")
+  // Vérifier si un prix valide est fourni
   const hasValidPrice =
     price !== undefined &&
     price !== null &&
     typeof price === "number" &&
-    !isNaN(price);
+    !isNaN(price) &&
+    price > 0;
 
+  // Pour Google, offers est obligatoire pour les Product snippets
+  // Si pas de prix spécifique, utiliser un prix minimum (35€ pour 1 personne)
+  // et indiquer que c'est un prix variable avec priceSpecification
   if (hasValidPrice) {
     offers.price = price.toFixed(2);
+  } else {
+    // Prix minimum par défaut (menu le moins cher pour 1 personne)
+    offers.price = "35.00";
+    // Ajouter priceSpecification pour indiquer que le prix est variable
+    offers.priceSpecification = {
+      "@type": "UnitPriceSpecification",
+      price: "35.00",
+      priceCurrency: "EUR",
+      minPrice: "35.00",
+      maxPrice: "170.00", // Menu le plus cher pour 2 personnes
+      valueAddedTaxIncluded: true,
+    };
   }
 
   const structuredData: {
@@ -138,7 +84,7 @@ export function GiftCardProductJsonLd({
       logo: string;
     };
     category: string;
-    offers?: typeof offers;
+    offers: typeof offers;
     additionalProperty: Array<{
       "@type": string;
       name: string;
@@ -167,9 +113,9 @@ export function GiftCardProductJsonLd({
       logo: "https://influences-bayonne.fr/images/logo-bleu.svg",
     },
     category: "Gift Card",
-    // Inclure offers seulement si le prix est défini (obligatoire pour Google)
-    // Sinon, aggregateRating suffit selon les exigences Google
-    ...(hasValidPrice ? { offers } : {}),
+    // offers est toujours inclus (obligatoire pour Google Product snippets)
+    // Avec un prix minimum si pas de prix spécifique
+    offers,
     additionalProperty: [
       {
         "@type": "PropertyValue",
