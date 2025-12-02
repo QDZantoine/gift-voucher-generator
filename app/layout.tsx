@@ -125,29 +125,18 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
+  // Configuration des favicons selon les bonnes pratiques Next.js 15
+  // Next.js génère automatiquement les balises <link> depuis cette configuration
   icons: {
+    // favicon.ico en premier pour Google (priorité)
     icon: [
-      // Favicons générés par RealFaviconGenerator - favicon.ico en premier pour Google
       { url: "/favicon.ico", sizes: "any" },
       { url: "/favicon.svg", type: "image/svg+xml" },
       { url: "/favicon-96x96.png", sizes: "96x96", type: "image/png" },
     ],
+    shortcut: [{ url: "/favicon.ico" }],
     apple: [
       { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
-    ],
-    shortcut: [{ url: "/favicon.ico" }],
-    other: [
-      // PWA icons depuis site.webmanifest
-      {
-        rel: "apple-touch-icon",
-        url: "/web-app-manifest-192x192.png",
-        sizes: "192x192",
-      },
-      {
-        rel: "apple-touch-icon",
-        url: "/web-app-manifest-512x512.png",
-        sizes: "512x512",
-      },
     ],
   },
   other: {
