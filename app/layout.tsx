@@ -127,12 +127,14 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      // Favicons générés par RealFaviconGenerator
-      { url: "/favicon-96x96.png", sizes: "96x96", type: "image/png" },
-      { url: "/favicon.svg", type: "image/svg+xml" },
+      // Favicons générés par RealFaviconGenerator - favicon.ico en premier pour Google
       { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon-96x96.png", sizes: "96x96", type: "image/png" },
     ],
-    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
     shortcut: [{ url: "/favicon.ico" }],
     other: [
       // PWA icons depuis site.webmanifest
@@ -170,13 +172,9 @@ export default function RootLayout({
   return (
     <html lang="fr" suppressHydrationWarning>
       <head>
-        {/* Favicons générés par RealFaviconGenerator */}
-        <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
-        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-        <link rel="shortcut icon" href="/favicon.ico" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        {/* Favicons et manifest générés automatiquement par Next.js depuis les metadata */}
+        {/* Seule la meta apple-mobile-web-app-title doit être manuelle */}
         <meta name="apple-mobile-web-app-title" content="influences-bayonne" />
-        <link rel="manifest" href="/site.webmanifest" />
         <StructuredData />
       </head>
       <body
