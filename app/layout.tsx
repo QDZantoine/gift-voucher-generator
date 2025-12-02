@@ -63,18 +63,18 @@ export const metadata: Metadata = {
     // yandex: "votre-code-verification-yandex",
   },
   appleWebApp: {
-    title: "Influences Bayonne",
+    title: "influences-bayonne",
     statusBarStyle: "black-translucent",
     capable: true,
     startupImage: [
       {
-        url: "/apple-icon.png",
+        url: "/apple-touch-icon.png",
         media:
           "(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)",
       },
     ],
   },
-  manifest: "/manifest.json",
+  manifest: "/site.webmanifest",
   openGraph: {
     type: "website",
     locale: "fr_FR",
@@ -127,16 +127,15 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      // SVG icon (moderne, scalable)
-      { url: "/icon0.svg", type: "image/svg+xml" },
-      // PNG icons pour compatibilité
-      { url: "/icon1.png", sizes: "32x32", type: "image/png" },
+      // Favicons générés par RealFaviconGenerator
+      { url: "/favicon-96x96.png", sizes: "96x96", type: "image/png" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
       { url: "/favicon.ico", sizes: "any" },
     ],
-    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
     shortcut: [{ url: "/favicon.ico" }],
     other: [
-      // PWA icons depuis manifest.json
+      // PWA icons depuis site.webmanifest
       {
         rel: "apple-touch-icon",
         url: "/web-app-manifest-192x192.png",
@@ -171,6 +170,13 @@ export default function RootLayout({
   return (
     <html lang="fr" suppressHydrationWarning>
       <head>
+        {/* Favicons générés par RealFaviconGenerator */}
+        <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <meta name="apple-mobile-web-app-title" content="influences-bayonne" />
+        <link rel="manifest" href="/site.webmanifest" />
         <StructuredData />
       </head>
       <body
