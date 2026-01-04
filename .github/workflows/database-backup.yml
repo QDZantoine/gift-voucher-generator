@@ -1,0 +1,26 @@
+name: Database Backup
+on:
+  schedule:
+    - cron: '0 3 * * *' # S'exécute automatiquement chaque nuit à 3h00
+  workflow_dispatch: # Te permet de lancer un backup manuellement quand tu veux
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Installer le client PostgreSQL
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Dump de la base de données
+        env:
+          # On utilise ici le secret que tu as créé sur GitHub
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+        run: |
+          pg_dump $DIRECT_URL > backup_restaurant_$(date +%Y-%m-%d).sql
+
+      - name: Stockage du backup sur GitHub
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-backup-influences
+          path: backup_*.sql
+          retention-days: 30 # Garde tes fichiers 30 jours gratuitement
