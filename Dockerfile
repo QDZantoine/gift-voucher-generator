@@ -49,10 +49,7 @@ COPY . .
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Prisma needs DATABASE_URL at generate-time (schema parsing), even if it won't connect.
-ARG DATABASE_URL="postgresql://user:pass@localhost:5432/db?schema=public"
-ENV DATABASE_URL=$DATABASE_URL
-
+# Prisma client (with engines for better compatibility)
 RUN npx prisma generate
 
 # Next.js build (standalone)
